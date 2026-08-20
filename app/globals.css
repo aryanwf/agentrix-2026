@@ -1,7 +1,18 @@
 @import "tailwindcss";
+@import "tw-shimmer";
 
 :root { --olive: #5b673d; --olive-deep: #3d482b; --olive-soft: #dce2c9; --white: #fbfcf7; --ink: #263020; --muted: #718064; --line: #cbd4b7; }
-@theme inline { --color-background: var(--white); --color-foreground: var(--ink); --font-sans: var(--font-geist-sans); --font-mono: var(--font-geist-mono); }
+@theme inline { --color-background: var(--white); --color-foreground: var(--ink); --font-sans: var(--font-geist-sans); --font-mono: var(--font-geist-mono);
+  @keyframes collapsible-down {
+  from {
+    height: 0; }
+  to {
+    height: var(--radix-collapsible-content-height, var(--collapsible-panel-height, auto)); } }
+  @keyframes collapsible-up {
+  from {
+    height: var(--radix-collapsible-content-height, var(--collapsible-panel-height, auto)); }
+  to {
+    height: 0; } } }
 * { box-sizing: border-box; }
 html, body { background: var(--white); margin: 0; min-height: 100%; overflow: hidden; }
 body { color: var(--ink); font-family: Arial, Helvetica, sans-serif; }
@@ -181,3 +192,7 @@ a { color: inherit; } button { cursor: pointer; font: inherit; }
     transform: translateY(-4px);
   }
 }
+
+@custom-variant data-open (&:where([data-state="open"], [data-open]:not([data-open="false"])));
+
+@custom-variant data-closed (&:where([data-state="closed"], [data-closed]:not([data-closed="false"])));
