@@ -46,6 +46,7 @@ export default function SessionClient() {
   const queueRef = useRef<SpeechQueue | null>(null);
   const turnStartRef = useRef<number>(0);
   const vadRef = useRef<VadHandle | null>(null);
+  const logRef = useRef<HTMLDivElement>(null);
   /** VAD callbacks are registered once but must always call the *current* send. */
   const sendRef = useRef<
     (text: string, opts?: { interruptedAnswer?: string }) => Promise<void>
@@ -91,6 +92,17 @@ export default function SessionClient() {
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
+
+  // Follow the log, but only when the user is already at the bottom — scrolling back to re-read an
+  // earlier turn must not be yanked away the moment the next sentence lands.
+  useEffect(() => {
+    const log = logRef.current;
+    if (!log) return;
+    const distanceFromBottom =
+      log.scrollHeight - log.scrollTop - log.clientHeight;
+    if (distanceFromBottom > 80) return;
+    log.scrollTop = log.scrollHeight;
+  }, [turns]);
 
   useEffect(
     () => () => {
@@ -423,8 +435,12 @@ export default function SessionClient() {
   const statusLabel = listening ? "listening" : state;
 
   return (
-    <div className="flex h-full min-h-0 flex-1 flex-col bg-[#f3e6c9] text-zinc-100 lg:flex-row">
-      <section className="relative min-h-[45vh] flex-1">
+    // `h-full` would resolve to `auto` here: <body> is only `min-h-full`, so there is no definite
+    // height to take a percentage of, and the transcript's `overflow-y-auto` would never engage.
+    // A viewport unit is definite regardless of ancestors, which is what makes the inner scroller
+    // work. `overflow-hidden` keeps a mis-sized child from stretching the row instead of scrolling.
+    <div className="flex h-[100svh] min-h-0 flex-col overflow-hidden bg-[#f3e6c9] text-zinc-100 lg:flex-row">
+      <section className="relative min-h-[45vh] min-w-0 flex-1 lg:min-h-0">
         <Link
           href="/"
           className="absolute left-4 top-4 z-10 flex items-center gap-1.5 rounded-full bg-black/50 px-3 py-1.5 text-sm text-zinc-200 backdrop-blur transition-colors hover:bg-black/70 hover:text-white"
@@ -495,7 +511,9 @@ export default function SessionClient() {
         )}
       </section>
 
-      <aside className="flex w-full shrink-0 flex-col gap-3 border-t border-zinc-800 bg-[#0d1117] p-5 lg:w-[380px] lg:border-l lg:border-t-0">
+      {/* Stacked, the column is capped so a long log scrolls inside it rather than pushing the
+          page past the viewport; in the side-by-side row the flex line supplies the height. */}
+      <aside className="flex max-h-[55svh] w-full min-h-0 flex-col gap-3 overflow-hidden border-t border-zinc-800 bg-[#0d1117] p-5 lg:max-h-none lg:w-[380px] lg:shrink-0 lg:border-l lg:border-t-0">
         <header className="flex items-baseline justify-between">
           <h1 className="text-sm font-semibold tracking-wide">
             Cura — session
@@ -537,7 +555,10 @@ export default function SessionClient() {
           </div>
         )}
 
-        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto text-sm">
+        <div
+          ref={logRef}
+          className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain text-sm"
+        >
           {turns.length === 0 && (
             <p className="text-zinc-500">
               {voice
@@ -548,11 +569,11 @@ export default function SessionClient() {
           {turns.map((turn, i) => (
             <p
               key={i}
-              className={
+              className={`whitespace-pre-wrap break-words ${
                 turn.role === "user"
                   ? "ml-6 rounded-lg bg-emerald-900/30 px-3 py-2 text-emerald-100"
                   : "mr-6 rounded-lg bg-zinc-800/60 px-3 py-2 text-zinc-200"
-              }
+              }`}
             >
               {turn.content}
             </p>
