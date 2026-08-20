@@ -80,7 +80,7 @@ export default function Home() {
       <section className="app-picker" id="apps" aria-label="Choose a Cura application">
         <div className="app-buttons">
           {(Object.keys(apps) as AppName[]).map((appName) => (
-            <button className={`app-button ${activeApp === appName ? "selected" : ""}`} type="button" key={appName} onClick={() => selectApp(appName)} aria-pressed={activeApp === appName}>
+            <button className="app-button" type="button" key={appName} onClick={() => selectApp(appName)}>
               <AppIcon type={appName} /><span>{apps[appName].label}</span><b>↗</b>
             </button>
           ))}
