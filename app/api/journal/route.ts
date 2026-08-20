@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { supabase } from "@/lib/supabase";
 
 type JournalPayload = {
   deviceId?: string;
@@ -8,28 +9,8 @@ type JournalPayload = {
   entry?: string;
 };
 
-function getSupabaseConfig() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!url || !key) {
-    return null;
-  }
-
-  return { url: url.replace(/\/$/, ""), key };
-}
-
-function supabaseHeaders(key: string) {
-  return {
-    apikey: key,
-    Authorization: `Bearer ${key}`,
-    "Content-Type": "application/json",
-  };
-}
-
 export async function GET(request: NextRequest) {
-  const config = getSupabaseConfig();
-  if (!config) {
+  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return NextResponse.json({ error: "Supabase environment variables are missing." }, { status: 500 });
   }
 
@@ -38,22 +19,23 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "deviceId is required." }, { status: 400 });
   }
 
-  const response = await fetch(`${config.url}/rest/v1/journal_entries?device_id=eq.${encodeURIComponent(deviceId)}&select=*&order=created_at.desc&limit=1`, {
-    headers: supabaseHeaders(config.key),
-    cache: "no-store",
-  });
+  const { data, error } = await supabase
+    .from("journal_entries")
+    .select("*")
+    .eq("device_id", deviceId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
-  if (!response.ok) {
-    return NextResponse.json({ error: await response.text() }, { status: response.status });
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const entries = await response.json();
-  return NextResponse.json({ entry: entries[0] ?? null });
+  return NextResponse.json({ entry: data ?? null });
 }
 
 export async function POST(request: NextRequest) {
-  const config = getSupabaseConfig();
-  if (!config) {
+  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return NextResponse.json({ error: "Supabase environment variables are missing." }, { status: 500 });
   }
 
@@ -62,25 +44,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "deviceId is required." }, { status: 400 });
   }
 
-  const response = await fetch(`${config.url}/rest/v1/journal_entries`, {
-    method: "POST",
-    headers: {
-      ...supabaseHeaders(config.key),
-      Prefer: "return=representation",
-    },
-    body: JSON.stringify({
+  const { data, error } = await supabase
+    .from("journal_entries")
+    .insert({
       device_id: payload.deviceId,
       mood: payload.mood ?? "steady",
       morning_note: payload.morningNote ?? "",
       prompt: payload.prompt ?? "",
       entry: payload.entry ?? "",
-    }),
-  });
+    })
+    .select()
+    .single();
 
-  if (!response.ok) {
-    return NextResponse.json({ error: await response.text() }, { status: response.status });
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const entries = await response.json();
-  return NextResponse.json({ entry: entries[0] ?? null });
+  return NextResponse.json({ entry: data ?? null });
 }
