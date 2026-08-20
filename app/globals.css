@@ -30,7 +30,7 @@ a { color: inherit; } button { cursor: pointer; font: inherit; }
 @media (max-width: 480px) { .brand { font-size: 21px; }.brand .logo-mark { height: 30px; width: 30px; }.static-header .header-button { padding: 11px 13px; }.static-hero { padding-top: 35px; }.olive-label { margin-bottom: 18px; }.hero-copy { font-size: 14px; }.card-content { padding: 38px 20px 25px; }.card-content h2 { font-size: 39px; }.companion-card { min-height: 385px; padding-left: 17px; padding-right: 17px; }.card-footer { left: 17px; right: 17px; }.app-picker { padding-bottom: 18px; } }
 
 /* Keep the landing screen balanced inside one viewport. */
-:root { --olive: #d77967; --olive-deep: #202a40; --olive-soft: #e8e4f0; --white: #fcfaf6; --beige: #f2e9d5; --ink: #202a40; --muted: #687284; --line: #ddd9d2; }
+:root { --olive: #b0633f; --olive-deep: #2d261f; --olive-soft: #f0e4c8; --white: #faf3e3; --beige: #f2e9d5; --ink: #2d261f; --muted: #8a7662; --line: #ddd0b4; }
 .static-page { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
 .static-header { padding-bottom: 20px; padding-top: 20px; }
 .static-header .header-button { background: var(--ink); }
@@ -42,18 +42,18 @@ a { color: inherit; } button { cursor: pointer; font: inherit; }
 .hero-message h1 em { color: var(--olive); }
 .hero-copy { color: var(--muted); }
 .hero-link { color: var(--ink); }
-.companion-card { background: var(--olive-soft); border-color: #d8d1e2; box-shadow: 14px 14px 0 rgba(32,42,64,.08); min-height: 410px; }
-.card-topline { border-color: #d4cfdd; color: var(--ink); }
+.companion-card { background: var(--olive-soft); border-color: #e2d6b8; box-shadow: 14px 14px 0 rgba(45,38,31,.09); min-height: 410px; }
+.card-topline { border-color: #ded3b4; color: var(--ink); }
 .card-topline .logo-mark, .logo-mark { background: var(--ink); }
-.card-kicker { color: #7a6a78; }
+.card-kicker { color: #a36a45; }
 .card-content h2 { color: var(--ink); }
-.card-content > p { color: #6d7180; }
+.card-content > p { color: #8a7662; }
 .prompt-box { background: var(--beige); color: var(--ink); }
 .begin-button { background: var(--ink); }
-.card-footer { border-color: #d4cfdd; color: #7c7f8c; }
+.card-footer { border-color: #ded3b4; color: #9a8671; }
 .card-mark { color: var(--olive); }
 .app-picker { padding-bottom: 20px; padding-top: 14px; }
-.app-button { border-color: #d5d1ca; color: var(--ink); }
+.app-button { border-color: #ddd0b4; color: var(--ink); }
 .app-button:hover, .app-button.selected { background: var(--ink); border-color: var(--ink); }
 .app-button.selected .app-icon { color: var(--olive); }
 .app-icon { color: var(--ink); }
@@ -69,8 +69,8 @@ a { color: inherit; } button { cursor: pointer; font: inherit; }
 .brand .logo-mark { height: 52px; width: 52px; }
 .brand .logo-mark i { height: 7px; width: 7px; }
 .brand .logo-mark i:nth-child(2) { height: 14px; width: 7px; }
-.static-hero { background: linear-gradient(112deg, transparent 0%, transparent 48%, #f2eff6 48%, #f2eff6 100%); gap: 10vw; max-width: none; padding-left: 12vw; padding-right: 12vw; position: relative; }
-.static-hero:before { background: #f5c8bb; border-radius: 50%; content: ""; height: 180px; opacity: .58; position: absolute; right: 8vw; top: 8%; width: 180px; }
+.static-hero { background: linear-gradient(112deg, transparent 0%, transparent 48%, #f0e4c8 48%, #f0e4c8 100%); gap: 10vw; max-width: none; padding-left: 12vw; padding-right: 12vw; position: relative; }
+.static-hero:before { background: #dfb28d; border-radius: 50%; content: ""; height: 180px; opacity: .58; position: absolute; right: 8vw; top: 8%; width: 180px; }
 .hero-message, .companion-card { z-index: 1; }
 .hero-message h1 { font-size: clamp(82px, 10vw, 145px); }
 .companion-card { min-height: 490px; padding-left: 34px; padding-right: 34px; width: min(100%, 580px); }
@@ -80,7 +80,7 @@ a { color: inherit; } button { cursor: pointer; font: inherit; }
 .app-buttons { gap: 16px; }
 .app-button { min-height: 64px; padding-left: 21px; padding-right: 21px; }
 .app-button > span:not(.app-icon) { font-size: 15px; }
-@media (max-width: 820px) { .static-header { padding-left: 20px; padding-right: 20px; }.brand { font-size: 25px; gap: 11px; }.brand .logo-mark { height: 39px; width: 39px; }.brand .logo-mark i { height: 5px; width: 5px; }.brand .logo-mark i:nth-child(2) { height: 10px; width: 5px; }.static-hero { background: #f2eff6; padding-left: 20px; padding-right: 20px; }.static-hero:before { height: 100px; right: 6%; top: 3%; width: 100px; }.companion-card { min-height: 430px; width: 100%; }.card-content { padding: 48px 28px 25px; }.app-picker { padding-left: 20px; padding-right: 20px; } }
+@media (max-width: 820px) { .static-header { padding-left: 20px; padding-right: 20px; }.brand { font-size: 25px; gap: 11px; }.brand .logo-mark { height: 39px; width: 39px; }.brand .logo-mark i { height: 5px; width: 5px; }.brand .logo-mark i:nth-child(2) { height: 10px; width: 5px; }.static-hero { background: #f0e4c8; padding-left: 20px; padding-right: 20px; }.static-hero:before { height: 100px; right: 6%; top: 3%; width: 100px; }.companion-card { min-height: 430px; width: 100%; }.card-content { padding: 48px 28px 25px; }.app-picker { padding-left: 20px; padding-right: 20px; } }
 @media (max-width: 820px) { .hero-message h1 { font-size: clamp(60px, 13vw, 96px); } }
 
 /* shadcn-style tokens for the /chat workspace. These layer on top of the landing
@@ -132,8 +132,8 @@ a { color: inherit; } button { cursor: pointer; font: inherit; }
     115deg,
     var(--white) 0%,
     var(--white) 42%,
-    #f2eff6 42%,
-    #f2eff6 100%
+    #f0e4c8 42%,
+    #f0e4c8 100%
   );
   inset: 0;
   overflow: hidden;
@@ -150,7 +150,7 @@ a { color: inherit; } button { cursor: pointer; font: inherit; }
 }
 
 .chat-backdrop:before {
-  background: #f5c8bb;
+  background: #dfb28d;
   filter: blur(70px);
   height: 300px;
   opacity: 0.5;
@@ -160,7 +160,7 @@ a { color: inherit; } button { cursor: pointer; font: inherit; }
 }
 
 .chat-backdrop:after {
-  background: #c9c2dd;
+  background: #dfcd9e;
   bottom: 6%;
   filter: blur(80px);
   height: 240px;
@@ -209,7 +209,7 @@ a { color: inherit; } button { cursor: pointer; font: inherit; }
 .typing-bubble {
   align-items: center;
   background: var(--olive-soft);
-  border: 1px solid #d8d1e2;
+  border: 1px solid #e2d6b8;
   border-radius: 18px;
   border-bottom-left-radius: 6px;
   display: inline-flex;
