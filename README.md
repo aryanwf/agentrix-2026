@@ -76,4 +76,4 @@ bun run build
 - `lib/` — chat gate, safety lexicon, prompts, OpenRouter client, TTS queue/alignment, voice (VAD/STT/WAV), sentences
 - `vendor/talkinghead/` — vendored TalkingHead (see its README for why)
 - `public/avatars/`, `public/vad/` — avatar GLB and Silero VAD model
-   
+    
