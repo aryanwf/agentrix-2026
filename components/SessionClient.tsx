@@ -14,6 +14,7 @@ import { HELPLINES } from "@/lib/resources";
 import { isCrisis } from "@/lib/safety/types";
 import { getTtsStatus } from "@/lib/tts/client";
 import { SpeechQueue } from "@/lib/tts/queue";
+import { adjudicateBargeIn, classifyBargeIn } from "@/lib/voice/backchannel";
 import { transcribe } from "@/lib/voice/stt";
 import type { VadHandle } from "@/lib/voice/vad";
 import type { AvatarHandle } from "./AvatarStage";
@@ -45,10 +46,23 @@ export default function SessionClient() {
   const turnStartRef = useRef<number>(0);
   const vadRef = useRef<VadHandle | null>(null);
   /** VAD callbacks are registered once but must always call the *current* send. */
-  const sendRef = useRef<(text: string) => Promise<void>>(async () => {});
+  const sendRef = useRef<
+    (text: string, opts?: { interruptedAnswer?: string }) => Promise<void>
+  >(async () => {});
+  /** Everything the model has generated this turn, delivered or not. */
+  const spokenRef = useRef("");
+  /** The sentence that was playing when the user cut in — context for adjudication. */
+  const speakingNowRef = useRef("");
+  /**
+   * Set while the user is talking over a live answer. The answer is held, not cancelled: the SSE
+   * stream keeps running and `SpeechQueue` keeps the undelivered text, so it can still be resumed.
+   */
+  const bargeRef = useRef<{ from: "thinking" | "speaking" } | null>(null);
 
   const [avatarReady, setAvatarReady] = useState(false);
   const [state, setState] = useState<SessionState>("idle");
+  /** VAD callbacks fire outside React's flow and must read state without re-registering. */
+  const stateRef = useRef<SessionState>("idle");
   const [turns, setTurns] = useState<Turn[]>([]);
   const [draft, setDraft] = useState("");
   const [subtitles, setSubtitles] = useState("");
@@ -73,6 +87,10 @@ export default function SessionClient() {
     return () => controller.abort();
   }, []);
 
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
   useEffect(
     () => () => {
       abortRef.current?.abort();
@@ -82,20 +100,32 @@ export default function SessionClient() {
   );
 
   const send = useCallback(
-    async (input: string) => {
+    async (input: string, opts?: { interruptedAnswer?: string }) => {
       const text = input.trim();
       if (!text || state === "idle" || state === "crisis") return;
 
-      // One in-flight turn at a time: a new question abandons the old answer outright.
+      // One in-flight turn at a time: a new question abandons the old answer outright. Note this
+      // is the *committed* path — a barge-in only reaches here once we've decided the user really
+      // did take the floor. A held answer never passes through here.
       abortRef.current?.abort();
       queueRef.current?.cancel();
       avatar.current?.stop();
+      bargeRef.current = null;
+      spokenRef.current = "";
+      speakingNowRef.current = "";
 
       const controller = new AbortController();
       abortRef.current = controller;
 
+      // A cut-off answer still happened as far as the user is concerned — they heard part of it.
+      // Recording only the delivered part keeps the model from repeating what was already said, and
+      // from referring back to the half it never got to speak.
+      const interrupted = opts?.interruptedAnswer?.trim();
       const history = [
         ...turns,
+        ...(interrupted
+          ? [{ role: "assistant" as const, content: interrupted }]
+          : []),
         { role: "user" as const, content: text },
       ].slice(-MAX_MESSAGES);
       setTurns(history);
@@ -110,12 +140,14 @@ export default function SessionClient() {
       let crisis = false;
 
       const queue = new SpeechQueue({
-        speak: async (sentence, index) => {
+        speak: async (sentence, index, onPlayed) => {
           if (controller.signal.aborted) return;
+          speakingNowRef.current = sentence;
           await avatar.current?.speak(sentence, {
             mute: muted,
             signal: controller.signal,
             onWord: (word) => setSubtitles((prev) => (prev + word).slice(-400)),
+            onPlayed,
           });
           if (controller.signal.aborted) return;
           if (index === 0) {
@@ -156,6 +188,7 @@ export default function SessionClient() {
             break;
           case "sentence":
             spoken = spoken ? `${spoken} ${event.text}` : event.text;
+            spokenRef.current = spoken;
             queue.push(event.text);
             break;
           case "error":
@@ -198,22 +231,119 @@ export default function SessionClient() {
     sendRef.current = send;
   }, [send]);
 
-  /** One VAD segment: audio → transcript → turn. Silence quietly returns to listening. */
-  const onSpeechEnd = useCallback(async (audio: Float32Array) => {
-    setSpeechLevel(0);
-    setState((current) => (current === "ready" ? "transcribing" : current));
-    try {
-      const text = await transcribe(audio);
-      if (!text) {
-        setState((current) => (current === "transcribing" ? "ready" : current));
+  /**
+   * VAD heard speech start. Go quiet immediately so the user has the floor.
+   *
+   * Nothing is cancelled here — this is a *hold*, not a stop. The /api/chat stream keeps running
+   * and keeps buffering sentences; `SpeechQueue.pause` rewinds everything not yet heard back onto
+   * its own pending list. Clearing the avatar's buffer is safe precisely because the queue is now
+   * the only copy, which is what lets the answer resume intact if this turns out to be a "mm-hmm".
+   */
+  const onSpeechStart = useCallback(() => {
+    const current = stateRef.current;
+    if (current !== "speaking" && current !== "thinking") return;
+    if (bargeRef.current) return;
+    bargeRef.current = { from: current };
+    avatar.current?.stop();
+    queueRef.current?.pause();
+  }, []);
+
+  /** Put the held answer back on the air, from the start of the sentence that got cut off. */
+  const resumeHeldAnswer = useCallback(() => {
+    const barge = bargeRef.current;
+    bargeRef.current = null;
+    if (!barge) return;
+    // Restore the state first: `resume()` can drain and fire `onIdle` synchronously, and that path
+    // is allowed to overrule us with `ready` when the answer turns out to be finished.
+    setState((current) =>
+      current === "crisis" || current === "idle" ? current : barge.from,
+    );
+    queueRef.current?.resume();
+  }, []);
+
+  /** The part of this turn's answer the user actually heard before cutting in. */
+  const deliveredSoFar = useCallback(() => {
+    const all = spokenRef.current.trim();
+    const held = (queueRef.current?.undelivered ?? "").trim();
+    if (!all) return "";
+    // `held` is by construction a suffix of `all` — same sentences, same order, same joiner.
+    if (held && all.endsWith(held)) return all.slice(0, all.length - held.length).trim();
+    return held ? "" : all;
+  }, []);
+
+  /**
+   * One VAD segment: audio → transcript → turn. Silence quietly returns to listening.
+   *
+   * If a barge-in is being held, this is where it is judged. "mm-hmm" resumes the answer; a real
+   * turn abandons it and responds instead. Only the ambiguous middle costs a round trip.
+   */
+  const onSpeechEnd = useCallback(
+    async (audio: Float32Array) => {
+      setSpeechLevel(0);
+      const held = bargeRef.current;
+      setState((current) =>
+        current === "ready" || current === "thinking" || current === "speaking"
+          ? "transcribing"
+          : current,
+      );
+
+      let text = "";
+      try {
+        text = await transcribe(audio);
+      } catch (err) {
+        setError((err as Error).message);
+        if (held) resumeHeldAnswer();
+        else setState((c) => (c === "transcribing" ? "ready" : c));
         return;
       }
-      await sendRef.current(text);
-    } catch (err) {
-      setError((err as Error).message);
-      setState((current) => (current === "transcribing" ? "ready" : current));
-    }
-  }, []);
+
+      if (!held) {
+        if (!text) {
+          setState((c) => (c === "transcribing" ? "ready" : c));
+          return;
+        }
+        try {
+          await sendRef.current(text);
+        } catch (err) {
+          setError((err as Error).message);
+          setState((c) => (c === "transcribing" ? "ready" : c));
+        }
+        return;
+      }
+
+      let verdict = classifyBargeIn(text);
+      if (verdict === "unclear") {
+        verdict = await adjudicateBargeIn({
+          interrupted: speakingNowRef.current,
+          remaining: queueRef.current?.undelivered ?? "",
+          utterance: text,
+        });
+      }
+
+      if (verdict === "backchannel") {
+        resumeHeldAnswer();
+        return;
+      }
+
+      // The user took the floor. Capture what they heard *before* `send` cancels the queue, so the
+      // abandoned half of the answer still lands in history as context.
+      const interruptedAnswer = deliveredSoFar();
+      bargeRef.current = null;
+      try {
+        await sendRef.current(text, { interruptedAnswer });
+      } catch (err) {
+        setError((err as Error).message);
+        setState((c) => (c === "transcribing" ? "ready" : c));
+      }
+    },
+    [resumeHeldAnswer, deliveredSoFar],
+  );
+
+  /** VAD decided that wasn't speech after all. Anything held goes straight back on the air. */
+  const onMisfire = useCallback(() => {
+    setSpeechLevel(0);
+    if (bargeRef.current) resumeHeldAnswer();
+  }, [resumeHeldAnswer]);
 
   const enableVoice = useCallback(async () => {
     if (vadRef.current) {
@@ -224,9 +354,10 @@ export default function SessionClient() {
     try {
       const { createVad } = await import("@/lib/voice/vad");
       vadRef.current = await createVad({
+        onSpeechStart,
         onSpeechEnd: (audio) => void onSpeechEnd(audio),
         onFrame: (probability) => setSpeechLevel(probability),
-        onMisfire: () => setSpeechLevel(0),
+        onMisfire,
       });
       setVoice(true);
     } catch (err) {
@@ -235,20 +366,27 @@ export default function SessionClient() {
     } finally {
       setMicBusy(false);
     }
-  }, [onSpeechEnd]);
+  }, [onSpeechEnd, onSpeechStart, onMisfire]);
 
   const disableVoice = useCallback(() => {
     setVoice(false);
     setSpeechLevel(0);
+    // Turning the mic off mid-hold must not leave the answer stranded — put it back on the air.
+    if (bargeRef.current) resumeHeldAnswer();
     void vadRef.current?.pause();
-  }, []);
+  }, [resumeHeldAnswer]);
 
-  // The mic is open only while nothing else is: never while Cura is talking (even with echo
-  // cancellation on, her own voice is the loudest thing in the room) and never mid-transcription.
+  // The mic stays hot through `thinking` and `speaking` too, so the user can barge in — it only
+  // goes quiet during `transcribing` (already processing a segment) and non-conversational states.
+  // Relies on getUserMedia's echoCancellation (lib/voice/vad.ts) to keep Cura's own voice from
+  // re-triggering herself; see onSpeechStart/onSpeechEnd/onMisfire above for the two-stage
+  // pause-then-confirm barge-in logic that also guards against false positives.
   useEffect(() => {
     const vad = vadRef.current;
     if (!vad) return;
-    if (voice && state === "ready") void vad.start();
+    const micShouldBeHot =
+      voice && (state === "ready" || state === "thinking" || state === "speaking");
+    if (micShouldBeHot) void vad.start();
     else void vad.pause();
   }, [voice, state]);
 
@@ -266,6 +404,8 @@ export default function SessionClient() {
     abortRef.current?.abort();
     queueRef.current?.cancel();
     avatar.current?.stop();
+    // Explicit Stop is the one place the user really does mean "discard it".
+    bargeRef.current = null;
     setState((current) => (current === "crisis" ? current : "ready"));
   }, []);
 
@@ -275,6 +415,9 @@ export default function SessionClient() {
   }, []);
 
   const busy = state === "thinking" || state === "speaking";
+  // The mic is actually hot (barge-in armed) through thinking/speaking too — see the gating effect
+  // above — but the label should still read "thinking"/"speaking" rather than "listening" then.
+  const micHot = voice && (state === "ready" || busy);
   const listening = voice && state === "ready";
   const statusLabel = listening ? "listening" : state;
 
@@ -314,8 +457,9 @@ export default function SessionClient() {
                     : "border-zinc-700 bg-black/50 text-zinc-500"
               }`}
             >
-              {/* Ring scales with live speech probability — the "it hears me" feedback. */}
-              {listening && (
+              {/* Ring scales with live speech probability — the "it hears me" feedback. Shown
+                  through thinking/speaking too since the mic stays armed then, for barge-in. */}
+              {micHot && (
                 <span
                   className="absolute inset-0 rounded-full border border-emerald-400/60"
                   style={{
