@@ -40,6 +40,51 @@ export default function ChatPage() {
 
   return (
     <div className="flex h-dvh bg-background text-foreground">
+      <aside className="hidden w-64 shrink-0 flex-col border-r border-primary/20 bg-primary/[0.07] md:flex">
+        <div className="p-3">
+          <Button
+            className="h-10 w-full justify-start gap-2 rounded-lg border-primary/30 text-sm"
+            onClick={() => window.location.reload()}
+            type="button"
+            variant="outline"
+          >
+            <SquarePen className="h-4 w-4" />
+            New chat
+          </Button>
+        </div>
+
+        <ScrollArea className="min-h-0 flex-1 px-2">
+          <p className="px-2 pb-1.5 text-[11px] font-medium text-primary/70">
+            History
+          </p>
+          <div className="space-y-0.5">
+            {history.map((item) => (
+              <button
+                className="w-full truncate rounded-md px-2 py-1.5 text-left text-[13px] text-foreground/80 hover:bg-primary/15"
+                key={item}
+                type="button"
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </ScrollArea>
+
+        <div className="border-t border-primary/20 p-2">
+          <div className="flex items-center gap-2 rounded-md bg-primary/10 px-2 py-1.5">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+              C
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-[13px] font-medium">CURA</p>
+              <p className="text-[10px] text-primary/70">
+                Therapist companion
+              </p>
+            </div>
+          </div>
+        </div>
+      </aside>
+
       <main className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-12 shrink-0 items-center justify-between border-b border-border px-4 md:px-6">
           <div className="flex items-center gap-2.5">
@@ -127,38 +172,38 @@ export default function ChatPage() {
           </div>
         </ScrollArea>
 
-        <div className="shrink-0 px-3 pb-3 md:px-6">
+        <div className="shrink-0 px-3 pb-4 md:px-6">
           <form className="mx-auto max-w-2xl" onSubmit={submit}>
-            <div className="rounded-[22px] border border-input bg-background p-1.5 shadow-[0_10px_30px_rgba(13,148,136,0.10)] focus-within:border-ring">
+            <div className="rounded-[28px] border border-input bg-white p-2 shadow-[0_12px_40px_rgba(13,148,136,0.12)] focus-within:border-ring">
               <Textarea
                 aria-label="Message CURA"
-                className="min-h-9 max-h-28"
+                className="min-h-10 max-h-32 px-3 py-2.5"
                 onChange={(event) => setInput(event.target.value)}
                 onKeyDown={onKeyDown}
                 placeholder="Message CURA"
                 rows={1}
                 value={input}
               />
-              <div className="flex items-center justify-between px-1.5 pb-0.5">
+              <div className="flex items-center justify-between px-2 pb-0.5">
                 <p className="text-[10px] text-muted-foreground">
                   CURA offers support and coping skills, not professional care.
                 </p>
                 {isStreaming ? (
                   <Button
                     aria-label="Stop"
-                    className="h-8 w-8"
+                    className="h-9 w-9 rounded-full"
                     onClick={stop}
                     size="icon"
                     type="button"
                     variant="secondary"
                   >
-                    <Square className="h-3.5 w-3.5" />
+                    <Square className="h-4 w-4" />
                   </Button>
                 ) : (
                   <Button
                     aria-label="Send"
                     className={cn(
-                      "h-8 w-8 transition-opacity",
+                      "h-9 w-9 rounded-full transition-opacity",
                       !input.trim() && "pointer-events-none opacity-0",
                     )}
                     size="icon"
@@ -172,51 +217,6 @@ export default function ChatPage() {
           </form>
         </div>
       </main>
-
-      <aside className="hidden w-64 shrink-0 flex-col border-l border-border bg-secondary/60 md:flex">
-        <div className="p-3">
-          <Button
-            className="h-10 w-full justify-start gap-2 rounded-lg text-sm"
-            onClick={() => window.location.reload()}
-            type="button"
-            variant="outline"
-          >
-            <SquarePen className="h-4 w-4" />
-            New chat
-          </Button>
-        </div>
-
-        <ScrollArea className="min-h-0 flex-1 px-2">
-          <p className="px-2 pb-1.5 text-[11px] font-medium text-muted-foreground">
-            History
-          </p>
-          <div className="space-y-0.5">
-            {history.map((item) => (
-              <button
-                className="w-full truncate rounded-md px-2 py-1.5 text-left text-[13px] text-foreground/80 hover:bg-accent"
-                key={item}
-                type="button"
-              >
-                {item}
-              </button>
-            ))}
-          </div>
-        </ScrollArea>
-
-        <div className="border-t border-border p-2">
-          <div className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-accent">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-              C
-            </div>
-            <div className="min-w-0">
-              <p className="truncate text-[13px] font-medium">CURA</p>
-              <p className="text-[10px] text-muted-foreground">
-                Therapist companion
-              </p>
-            </div>
-          </div>
-        </div>
-      </aside>
     </div>
   );
 }
