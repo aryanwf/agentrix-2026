@@ -122,9 +122,9 @@ export default function ChatPage() {
         </header>
 
         <ScrollArea className="min-h-0 flex-1">
-          <div className="mx-auto flex min-h-full w-full max-w-2xl flex-col px-4 py-6 md:px-6">
+          <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col px-4 py-6 md:px-6">
             {!hasMessages ? (
-              <div className="flex flex-1 flex-col items-center justify-start gap-2 pt-8 text-center">
+              <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
                 <div className="mb-1 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary border border-border text-primary-foreground">
                   C
                 </div>
@@ -173,7 +173,7 @@ export default function ChatPage() {
         </ScrollArea>
 
         <div className="shrink-0 px-3 pb-4 md:px-6">
-          <form className="mx-auto max-w-2xl" onSubmit={submit}>
+          <form className="mx-auto max-w-3xl" onSubmit={submit}>
             <div className="flex items-end gap-2">
               <Textarea
                 aria-label="Message CURA"
