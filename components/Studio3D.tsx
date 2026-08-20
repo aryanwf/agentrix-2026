@@ -270,7 +270,7 @@ export default function Studio3D() {
           disabled={!ready}
           className="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
         >
-          Mood → {MOODS[(moodIndex + 1) % MOODS.length]}
+          Mood: {MOODS[moodIndex]} → {MOODS[(moodIndex + 1) % MOODS.length]}
         </button>
 
         <div className="flex flex-wrap gap-2">
