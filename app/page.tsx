@@ -1,102 +1,133 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { MessageCircle, AudioLines, NotebookPen } from "lucide-react";
+import { AudioLines, MessageCircle, NotebookPen } from "lucide-react";
 
-type AppName = "chat" | "talk" | "journal";
+type AppName = "talk" | "chat" | "journal";
 
-const apps: Record<AppName, { label: string; title: string; text: string; prompt: string }> = {
-  chat: {
-    label: "Chat",
-    title: "Say what is on your mind.",
-    text: "A private space to untangle your thoughts and feel heard without judgment.",
-    prompt: "What feels most present today?",
-  },
-  talk: {
+const apps: {
+  name: AppName;
+  href: string;
+  icon: typeof AudioLines;
+  label: string;
+  blurb: string;
+}[] = [
+  {
+    name: "talk",
+    href: "/session",
+    icon: AudioLines,
     label: "Talk",
-    title: "Find your next small step.",
-    text: "Gentle guidance and practical exercises for the moments that need a reset.",
-    prompt: "What would feel helpful right now?",
+    blurb: "Speak out loud, hear her back",
   },
-  journal: {
+  {
+    name: "chat",
+    href: "/chat",
+    icon: MessageCircle,
+    label: "Chat",
+    blurb: "Type it instead, same companion",
+  },
+  {
+    name: "journal",
+    href: "/journal",
+    icon: NotebookPen,
     label: "Journal",
-    title: "Notice what is changing.",
-    text: "Simple prompts to make sense of your days and keep the good close.",
-    prompt: "What do you want to remember from today?",
+    blurb: "Keep what you want to remember",
   },
-};
+];
 
 function Logo() {
-  return <span className="logo-mark" aria-hidden="true"><i /><i /><i /></span>;
-}
-
-const appIcons: Record<AppName, typeof MessageCircle> = {
-  chat: MessageCircle,
-  talk: AudioLines,
-  journal: NotebookPen,
-};
-
-function AppIcon({ type }: { type: AppName }) {
-  const Icon = appIcons[type];
   return (
-    <span className={`app-icon ${type}-icon`} aria-hidden="true">
-      <Icon size={18} strokeWidth={1.75} />
+    <span className="logo-mark" aria-hidden="true">
+      <i />
+      <i />
+      <i />
     </span>
   );
 }
 
 export default function Home() {
   const router = useRouter();
-  const activeApp: AppName = "chat";
-  const active = apps[activeApp];
-
-  function selectApp(appName: AppName) {
-    if (appName === "chat") {
-      router.push("/chat");
-      return;
-    }
-    if (appName === "talk") {
-      router.push("/session");
-      return;
-    }
-    router.push("/journal");
-  }
 
   return (
-    <main className="static-page">
-      <header className="static-header">
-        <a className="brand" href="#home" aria-label="Cura home"><Logo /><span>cura<span className="brand-dot">.</span></span></a>
-        <nav aria-label="Main navigation"></nav>
+    <main className="lp">
+      <header className="lp-header">
+        <Link className="brand" href="/" aria-label="Cura home">
+          <Logo />
+          <span>
+            cura<span className="brand-dot">.</span>
+          </span>
+        </Link>
       </header>
 
-      <section className="static-hero" id="home">
-        <div className="hero-message">
-          <h1>Feel more like <em>yourself.</em></h1>
-          <p className="hero-copy">Cura is a calm companion for everyday wellbeing. Choose a way in, take your time, and begin wherever you are.</p>
-        </div>
+      <section className="lp-hero">
+        <div className="lp-copy">
+          <p className="lp-eyebrow">Voice-first companion</p>
+          <h1>
+            Feel more like <em>yourself.</em>
+          </h1>
+          <p className="lp-lede">
+            Cura listens while you talk it through, then answers out loud — a calm,
+            therapy-informed presence for the days that need one.
+          </p>
 
-        <div className="companion-card" id="about">
-          <div className="card-topline"><span><Logo /> Cura</span><span className="private-pill"><i /> private space</span></div>
-          <div className="card-content" key={activeApp}>
-            <div className="card-kicker">{active.label} with Cura</div>
-            <h2>{active.title}</h2>
-            <p>{active.text}</p>
-            <div className="prompt-box"><span>{active.prompt}</span><b>↗</b></div>
-            <button className="begin-button" type="button" onClick={() => selectApp(activeApp)}>Begin with {active.label.toLowerCase()} <span>↗</span></button>
-          </div>
-          <div className="card-footer"><span>Small steps count.</span><span className="card-mark">✦</span></div>
-        </div>
-      </section>
-
-      <section className="app-picker" id="apps" aria-label="Choose a Cura application">
-        <div className="app-buttons">
-          {(Object.keys(apps) as AppName[]).map((appName) => (
-            <button className="app-button" type="button" key={appName} onClick={() => selectApp(appName)}>
-              <AppIcon type={appName} /><span>{apps[appName].label}</span><b>↗</b>
+          <div className="lp-actions">
+            <button className="lp-cta" type="button" onClick={() => router.push("/session")}>
+              <AudioLines size={18} strokeWidth={1.75} />
+              Start talking
+              <b>↗</b>
             </button>
-          ))}
+            <button className="lp-ghost" type="button" onClick={() => router.push("/chat")}>
+              or type instead
+            </button>
+          </div>
+        </div>
+
+        <div className="lp-stage">
+          <span className="lp-ring two" aria-hidden="true" />
+          <span className="lp-ring" aria-hidden="true" />
+          <span className="lp-disc" aria-hidden="true" />
+
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            className="lp-figure"
+            src="/brand/cura.webp"
+            alt="Cura, the companion avatar, mid-conversation"
+            width={830}
+            height={1450}
+            fetchPriority="high"
+          />
+
+          <div className="lp-voice">
+            <span className="lp-wave" aria-hidden="true">
+              <i />
+              <i />
+              <i />
+              <i />
+              <i />
+            </span>
+            <div className="lp-voice-text">
+              <strong>Listening</strong>
+              <span>&ldquo;Take your time. I&rsquo;m here.&rdquo;</span>
+            </div>
+          </div>
         </div>
       </section>
+
+      <nav className="lp-apps" aria-label="Ways in">
+        {apps.map(({ name, href, icon: Icon, label, blurb }) => (
+          <button className="lp-app" type="button" key={name} onClick={() => router.push(href)}>
+            <span className="lp-app-icon" aria-hidden="true">
+              <Icon size={18} strokeWidth={1.75} />
+            </span>
+            <span>
+              <strong>{label}</strong>
+              <small>{blurb}</small>
+            </span>
+            <b aria-hidden="true">↗</b>
+          </button>
+        ))}
+      </nav>
     </main>
   );
 }
