@@ -30,7 +30,7 @@ a { color: inherit; } button { cursor: pointer; font: inherit; }
 @media (max-width: 480px) { .brand { font-size: 21px; }.brand .logo-mark { height: 30px; width: 30px; }.static-header .header-button { padding: 11px 13px; }.static-hero { padding-top: 35px; }.olive-label { margin-bottom: 18px; }.hero-copy { font-size: 14px; }.card-content { padding: 38px 20px 25px; }.card-content h2 { font-size: 39px; }.companion-card { min-height: 385px; padding-left: 17px; padding-right: 17px; }.card-footer { left: 17px; right: 17px; }.app-picker { padding-bottom: 18px; } }
 
 /* Keep the landing screen balanced inside one viewport. */
-:root { --olive: #d77967; --olive-deep: #202a40; --olive-soft: #e8e4f0; --white: #fcfaf6; --ink: #202a40; --muted: #687284; --line: #ddd9d2; }
+:root { --olive: #d77967; --olive-deep: #202a40; --olive-soft: #e8e4f0; --white: #fcfaf6; --beige: #f2e9d5; --ink: #202a40; --muted: #687284; --line: #ddd9d2; }
 .static-page { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
 .static-header { padding-bottom: 20px; padding-top: 20px; }
 .static-header .header-button { background: var(--ink); }
@@ -48,7 +48,7 @@ a { color: inherit; } button { cursor: pointer; font: inherit; }
 .card-kicker { color: #7a6a78; }
 .card-content h2 { color: var(--ink); }
 .card-content > p { color: #6d7180; }
-.prompt-box { background: rgba(252,250,246,.78); color: var(--ink); }
+.prompt-box { background: var(--beige); color: var(--ink); }
 .begin-button { background: var(--ink); }
 .card-footer { border-color: #d4cfdd; color: #7c7f8c; }
 .card-mark { color: var(--olive); }
