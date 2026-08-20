@@ -48,6 +48,74 @@ h1, h2, p { margin-top: 0; }
 .logo-mark.sm { flex: 0 0 auto; gap: 1.5px; height: 20px; width: 20px; }
 .logo-mark.sm i { height: 3px; width: 3px; }
 .logo-mark.sm i:nth-child(2) { height: 6px; width: 3px; }
+/* Keep the landing screen balanced inside one viewport. */
+:root { --olive: #b0633f; --olive-deep: #2d261f; --olive-soft: #f0e4c8; --white: #faf3e3; --beige: #f2e9d5; --ink: #2d261f; --muted: #8a7662; --line: #ddd0b4; }
+.static-page { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
+.static-header { padding-bottom: 20px; padding-top: 20px; }
+.static-header .header-button { background: var(--ink); }
+.static-hero { gap: 7vw; min-height: 0; padding-bottom: 31px; padding-top: 27px; }
+.hero-message { align-self: center; }
+.olive-label, .card-kicker, .picker-heading { color: var(--ink); }
+.olive-label:before { background: var(--olive); }
+.hero-message h1 { color: var(--ink); }
+.hero-message h1 em { color: var(--olive); }
+.hero-copy { color: var(--muted); }
+.hero-link { color: var(--ink); }
+.companion-card { background: var(--olive-soft); border-color: #e2d6b8; box-shadow: 14px 14px 0 rgba(45,38,31,.09); min-height: 410px; }
+.card-topline { border-color: #ded3b4; color: var(--ink); }
+.card-topline .logo-mark, .logo-mark { background: var(--ink); }
+.card-kicker { color: #a36a45; }
+.card-content h2 { color: var(--ink); }
+.card-content > p { color: #8a7662; }
+.prompt-box { background: var(--beige); color: var(--ink); }
+.begin-button { background: var(--ink); }
+.card-footer { border-color: #ded3b4; color: #9a8671; }
+.card-mark { color: var(--olive); }
+.app-picker { padding-bottom: 20px; padding-top: 14px; }
+.app-button { border-color: #ddd0b4; color: var(--ink); }
+.app-button:hover, .app-button.selected { background: var(--ink); border-color: var(--ink); }
+.app-button.selected .app-icon { color: var(--olive); }
+.app-icon { color: var(--ink); }
+.auth-actions { align-items: center; display: flex; gap: 10px; }
+.auth-login, .auth-signup { border: 1px solid var(--line); border-radius: 100px; font-size: 12px; padding: 10px 15px; text-decoration: none; }
+.auth-login { background: transparent; color: var(--ink); }
+.auth-signup { background: var(--ink); color: var(--white); }
+.auth-user { color: var(--muted); font-size: 12px; max-width: 180px; overflow: hidden; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
+.auth-page { align-items: center; background: var(--white); display: flex; flex-direction: column; min-height: 100svh; padding: 34px 20px; }
+.auth-brand { align-items: center; display: inline-flex; font-size: 28px; font-weight: 700; gap: 9px; letter-spacing: -.07em; text-decoration: none; }
+.auth-card { background: var(--olive-soft); border: 1px solid #e2d6b8; margin-top: 12vh; max-width: 480px; padding: 42px; width: 100%; }
+.auth-eyebrow { color: var(--olive); font-size: 10px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+.auth-card h1 { color: var(--ink); font-family: Georgia, serif; font-size: clamp(40px, 8vw, 64px); font-weight: 400; letter-spacing: -.07em; line-height: .95; margin: 16px 0; }
+.auth-card > p { color: var(--muted); font-size: 14px; line-height: 1.6; }
+.auth-form { display: grid; gap: 18px; margin-top: 30px; }
+.auth-form label { color: var(--ink); display: grid; font-size: 11px; gap: 7px; letter-spacing: .08em; text-transform: uppercase; }
+.auth-form input { background: var(--white); border: 1px solid var(--line); color: var(--ink); font: 15px Arial, sans-serif; outline: 0; padding: 13px 14px; text-transform: none; }
+.auth-form input:focus { border-color: var(--olive); box-shadow: 0 0 0 3px rgba(176,99,63,.12); }
+.auth-submit { background: var(--ink); border: 0; color: var(--white); font-size: 12px; padding: 15px 18px; text-align: left; }
+.auth-submit span { float: right; font-size: 16px; }
+.auth-submit:disabled { cursor: wait; opacity: .65; }
+.auth-error { color: #a33f31 !important; font-size: 12px !important; margin: 0; }
+.auth-switch { font-size: 12px !important; margin: 24px 0 0; text-align: center; }
+.auth-switch a { color: var(--ink); font-weight: 700; }
+@media (max-width: 480px) { .auth-card { margin-top: 8vh; padding: 28px 22px; } .auth-user { display: none; } .auth-login, .auth-signup { padding: 9px 11px; } }
+.history-page { background: var(--white); min-height: 100svh; }
+.history-header { align-items: center; display: flex; justify-content: space-between; padding: 28px 5vw; }
+.history-content { margin: 7vh auto; max-width: 1100px; padding: 0 5vw; }
+.history-content h1 { color: var(--ink); font-family: Georgia, serif; font-size: clamp(42px, 7vw, 80px); font-weight: 400; letter-spacing: -.08em; line-height: .95; margin: 16px 0 55px; max-width: 680px; }
+.history-grid { display: grid; gap: 20px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.history-grid section { border-top: 1px solid var(--line); padding-top: 15px; }
+.history-grid h2 { color: var(--ink); font-size: 13px; letter-spacing: .12em; text-transform: uppercase; }
+.history-item { border-bottom: 1px solid var(--line); display: grid; gap: 8px; padding: 18px 0; }
+.history-item span { color: var(--muted); font-size: 11px; text-transform: uppercase; }
+.history-item strong { font-family: Georgia, serif; font-size: 19px; font-weight: 400; line-height: 1.25; }
+.history-item a { color: var(--olive); font-size: 12px; text-decoration: none; }
+.history-empty { color: var(--muted); font-size: 14px; line-height: 1.6; }
+@media (max-width: 700px) { .history-grid { grid-template-columns: 1fr; } .history-content { margin-top: 4vh; } }
+.journal-workspace h2 { margin-bottom: 12px; }
+.journal-prompt { color: #6d7180; font-family: Georgia, serif; font-size: 16px; margin-bottom: 13px; }
+.journal-workspace textarea { background: rgba(252,250,246,.78); border: 1px solid #d4cfdd; color: var(--ink); display: block; font: 14px/1.5 Arial, Helvetica, sans-serif; height: 76px; outline: 0; padding: 13px 15px; resize: none; width: 100%; }
+.journal-workspace textarea:focus { border-color: var(--olive); box-shadow: 0 0 0 3px rgba(215,121,103,.14); }
+.journal-workspace textarea::placeholder { color: #9a9ba5; }
 
 /* ---------------------------------------------------------------------------
    Landing page. Three rows inside one viewport: header, hero, app row.

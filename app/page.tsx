@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AudioLines, MessageCircle, NotebookPen } from "lucide-react";
+import AuthButtons from "@/components/AuthButtons";
 
 type AppName = "talk" | "chat" | "journal";
 
@@ -58,6 +59,7 @@ export default function Home() {
             cura<span className="brand-dot">.</span>
           </span>
         </Link>
+        <nav aria-label="Main navigation"><AuthButtons /></nav>
       </header>
 
       <section className="lp-hero">

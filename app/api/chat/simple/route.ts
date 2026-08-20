@@ -31,6 +31,8 @@ import {
   requireKey,
 } from "@/lib/openrouter";
 import { TEXT_CHAT_SYSTEM_PROMPT } from "@/lib/prompts";
+import { getSupabase } from "@/lib/supabase";
+import { createClient as createAuthClient } from "@/lib/supabase/server";
 
 export const maxDuration = 30;
 
@@ -73,6 +75,25 @@ export async function POST(req: Request) {
   const lastUser = [...messages].reverse().find((message) => message.role === "user");
   if (!lastUser) {
     return json({ error: "The last turn must be from the user." }, 400);
+  }
+
+  // Keep a private snapshot for signed-in users. Guests remain client-only.
+  try {
+    const auth = await createAuthClient();
+    const { data: authData } = await auth.auth.getUser();
+    const supabase = getSupabase();
+    if (authData.user && supabase) {
+      const firstText = messages.find((message) => message.role === "user");
+      const title = firstText ? messageText(firstText).slice(0, 70) || "Cura conversation" : "Cura conversation";
+      await supabase.from("conversations").upsert({
+        user_id: authData.user.id,
+        title,
+        messages,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "user_id" });
+    }
+  } catch {
+    // Chat should still work if account history has not been configured yet.
   }
 
   // Safety and scope screening lives in `lib/chat/gate.ts`, shared with the SSE route.

@@ -18,6 +18,8 @@ const prompts = [
 const moods = ["calm", "heavy", "steady", "hopeful"];
 
 type SavedEntry = {
+  id?: string;
+  created_at?: string;
   mood?: string;
   morning_note?: string;
   prompt?: string;
@@ -46,6 +48,8 @@ export default function JournalClient() {
   const [entry, setEntry] = useState("Today I noticed...");
   const [status, setStatus] = useState<"idle" | "loading" | "saving" | "saved" | "error">("idle");
   const [error, setError] = useState("");
+  const [entries, setEntries] = useState<SavedEntry[]>([]);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     async function loadEntry() {
@@ -56,7 +60,9 @@ export default function JournalClient() {
       try {
         const response = await fetch(`/api/journal?deviceId=${encodeURIComponent(id)}`);
         if (!response.ok) throw new Error("Could not load journal entry.");
-        const { entry: savedEntry } = (await response.json()) as { entry: SavedEntry | null };
+        const result = (await response.json()) as { entry?: SavedEntry | null; entries?: SavedEntry[] };
+        setEntries(result.entries ?? []);
+        const savedEntry = result.entries?.[0] ?? result.entry;
 
         if (savedEntry) {
           setMood(savedEntry.mood || "steady");
@@ -64,8 +70,10 @@ export default function JournalClient() {
           setPrompt(savedEntry.prompt || prompts[2]);
           setEntry(savedEntry.entry || "");
         }
+        setReady(true);
         setStatus("idle");
       } catch {
+        setReady(true);
         setStatus("idle");
       }
     }
@@ -89,7 +97,17 @@ export default function JournalClient() {
       return;
     }
 
+    const result = (await response.json()) as { entry?: SavedEntry };
+    if (result.entry) setEntries((current) => [result.entry!, ...current]);
     setStatus("saved");
+  }
+
+  function openEntry(savedEntry: SavedEntry) {
+    setMood(savedEntry.mood || "steady");
+    setMorningNote(savedEntry.morning_note || "");
+    setPrompt(savedEntry.prompt || prompts[2]);
+    setEntry(savedEntry.entry || "");
+    setStatus("idle");
   }
 
   return (
@@ -105,7 +123,7 @@ export default function JournalClient() {
           <p className="side-label">Today&apos;s page</p>
           <h1>A quiet place to write what you could not say out loud.</h1>
           <p className="side-copy">Choose a mood, pick a prompt, write freely, then save the page to your Supabase journal.</p>
-          <button className="start-writing" type="button" onClick={saveEntry} disabled={!deviceId || status === "saving"}>{status === "saving" ? "Saving..." : "Save today's entry"} <span>↘</span></button>
+           <button className="start-writing" type="button" onClick={saveEntry} disabled={!ready || status === "saving"}>{status === "saving" ? "Saving..." : "Save today's entry"} <span>↘</span></button>
           {error && <p className="save-error">{error}</p>}
         </aside>
 
@@ -129,12 +147,13 @@ export default function JournalClient() {
             <p className="prompt-label">Prompt</p>
             <h2>{prompt}</h2>
             <textarea className="entry-area" aria-label="Journal entry" value={entry} onChange={(event) => setEntry(event.target.value)} />
-            <button className="save-entry" type="button" onClick={saveEntry} disabled={!deviceId || status === "saving"}>{status === "saved" ? "Saved" : status === "saving" ? "Saving" : "Save this page"} <span>{status === "saved" ? "✓" : "↗"}</span></button>
+            <button className="save-entry" type="button" onClick={saveEntry} disabled={!ready || status === "saving"}>{status === "saved" ? "Saved" : status === "saving" ? "Saving" : "Save this page"} <span>{status === "saved" ? "✓" : "↗"}</span></button>
           </article>
         </div>
 
         <aside className="prompt-stack" aria-label="Journal prompts">
-          <p className="side-label">Prompt cards</p>
+           {entries.length > 0 && <><p className="side-label">Past pages</p>{entries.map((savedEntry) => <button className="prompt-card" type="button" key={savedEntry.id} onClick={() => openEntry(savedEntry)}><span>{savedEntry.created_at ? new Date(savedEntry.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : ""}</span><p>{savedEntry.entry || "Untitled page"}</p></button>)}</>}
+           <p className="side-label">Prompt cards</p>
           {prompts.map((promptText, index) => (
             <button className={`prompt-card ${prompt === promptText ? "active" : ""}`} type="button" key={promptText} onClick={() => setPrompt(promptText)}><span>{String(index + 1).padStart(2, "0")}</span><p>{promptText}</p></button>
           ))}
