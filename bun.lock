@@ -6,11 +6,9 @@
       "name": "agentrix-2026",
       "dependencies": {
         "@ai-sdk/openai": "^4",
-        "@ai-sdk/react": "^4",
         "@assistant-ui/react": "^0.15.15",
         "@assistant-ui/react-ai-sdk": "^1.4.6",
         "@assistant-ui/react-markdown": "^0.14.11",
-        "@met4citizen/talkinghead": "^1.7.0",
         "@ricky0123/vad-web": "^0.0.30",
         "@supabase/supabase-js": "^2.112.3",
         "ai": "^7",
@@ -24,7 +22,6 @@
         "remark-gfm": "^4.0.1",
         "three": "0.180.0",
         "tw-shimmer": "^0.4.12",
-        "zod": "^4.4.3",
         "zustand": "^5.0.15",
       },
       "devDependencies": {
@@ -217,8 +214,6 @@
     "@jridgewell/sourcemap-codec": ["@jridgewell/sourcemap-codec@1.5.5", "", {}, "sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og=="],
 
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
-
-    "@met4citizen/talkinghead": ["@met4citizen/talkinghead@1.7.0", "", { "dependencies": { "three": "^0.180.0" } }, "sha512-iBQhTjvwOO2lLht/YeWqAUmsH0jk4FGpxiPTPMMp3QYVjst/u2rDhn4up59BMJwfdeW3DyU7Im6y+TWmnNllZA=="],
 
     "@napi-rs/wasm-runtime": ["@napi-rs/wasm-runtime@1.2.3", "", { "dependencies": { "@tybys/wasm-util": "^0.10.3" }, "peerDependencies": { "@emnapi/core": "^1.7.1 || ^2.0.0-alpha.4", "@emnapi/runtime": "^1.7.1 || ^2.0.0-alpha.4" } }, "sha512-UMduMbqO5s5zF2NkNacMT/yK5Y5QiKvWr2+50bzIIxFDwVJ2h49b+oyjaCGPhJxd2/gC2x39EHv/gHVuu36x2Q=="],
 

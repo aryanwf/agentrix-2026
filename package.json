@@ -10,11 +10,9 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "^4",
-    "@ai-sdk/react": "^4",
     "@assistant-ui/react": "^0.15.15",
     "@assistant-ui/react-ai-sdk": "^1.4.6",
     "@assistant-ui/react-markdown": "^0.14.11",
-    "@met4citizen/talkinghead": "^1.7.0",
     "@ricky0123/vad-web": "^0.0.30",
     "@supabase/supabase-js": "^2.112.3",
     "ai": "^7",
@@ -28,7 +26,6 @@
     "remark-gfm": "^4.0.1",
     "three": "0.180.0",
     "tw-shimmer": "^0.4.12",
-    "zod": "^4.4.3",
     "zustand": "^5.0.15"
   },
   "devDependencies": {

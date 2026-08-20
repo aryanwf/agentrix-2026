@@ -59,6 +59,27 @@ function getMimeTypeIcon(mimeType: string): FC<{ className?: string }> {
   return FileIcon;
 }
 
+// Manual fix for assistant-ui registry component (see CLEANUP.md 3.3):
+// `getMimeTypeIcon` above picks a component *reference* at render time,
+// which react-hooks/static-components flags as "creating a component
+// during render" (it can't statically tell the returned reference is
+// always one of a fixed set of module-level components rather than a
+// freshly created one). Rendering the icon as a JSX element directly,
+// instead of storing the chosen component in a variable used as a JSX
+// tag, avoids the pattern the rule flags. `getMimeTypeIcon` is kept
+// exported for API compatibility.
+function renderMimeTypeIcon(mimeType: string | undefined, className: string) {
+  const type = mimeType?.toLowerCase() ?? "";
+  if (type.startsWith("image/")) return <ImageIcon className={className} />;
+  if (type === "application/pdf")
+    return <FileTextIcon className={className} />;
+  if (type === "application/json") return <BracesIcon className={className} />;
+  if (type.startsWith("text/")) return <FileTextIcon className={className} />;
+  if (type.startsWith("audio/")) return <MusicIcon className={className} />;
+  if (type.startsWith("video/")) return <VideoIcon className={className} />;
+  return <FileIcon className={className} />;
+}
+
 export type FileDataKind = "data-uri" | "url" | "base64" | "id";
 
 function getFileDataKind(
@@ -122,15 +143,13 @@ function FileIconDisplay({
   children,
   ...props
 }: FileIconDisplayProps) {
-  const IconComponent = mimeType ? getMimeTypeIcon(mimeType) : FileIcon;
-
   return (
     <span
       data-slot="file-icon"
       className={cn("text-muted-foreground shrink-0", className)}
       {...props}
     >
-      {children ?? <IconComponent className="size-5" />}
+      {children ?? renderMimeTypeIcon(mimeType, "size-5")}
     </span>
   );
 }

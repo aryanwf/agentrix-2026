@@ -74,14 +74,20 @@ function ReasoningRoot({
   ...props
 }: ReasoningRootProps) {
   const collapsibleRef = useRef<HTMLDivElement>(null);
-  const initialOpenRef = useRef(defaultOpen);
+  // Manual fix for assistant-ui registry component (see CLEANUP.md 3.4):
+  // upstream captured the initial `defaultOpen` value in a ref
+  // (`initialOpenRef`) and read `.current` during render, which
+  // react-hooks/refs flags ("Cannot access refs during render"). A
+  // lazily-initialized piece of state captures the same "value at mount"
+  // semantics and is safe to read during render.
+  const [initialOpen] = useState(defaultOpen);
   const [userOpen, setUserOpen] = useState<boolean | null>(null);
   const lockScroll = useScrollLock(collapsibleRef, ANIMATION_DURATION);
 
   const isControlled = controlledOpen !== undefined;
   const isOpen = isControlled
     ? controlledOpen
-    : (userOpen ?? (streaming || initialOpenRef.current));
+    : (userOpen ?? (streaming || initialOpen));
   const isPreview = streaming === true && isOpen;
 
   const prevStreamingRef = useRef(streaming);
@@ -90,10 +96,10 @@ function ReasoningRoot({
     prevStreamingRef.current = streaming;
     // A streaming transition only animates the panel when the resting state
     // is collapsed; with `defaultOpen` the disclosure stays open across it.
-    if (!isControlled && userOpen === null && !initialOpenRef.current) {
+    if (!isControlled && userOpen === null && !initialOpen) {
       lockScroll();
     }
-  }, [streaming, isControlled, userOpen, lockScroll]);
+  }, [streaming, isControlled, userOpen, lockScroll, initialOpen]);
 
   const handleOpenChange = useCallback(
     (open: boolean) => {

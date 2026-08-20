@@ -5,34 +5,15 @@
  * written to disk here — the audio buffer dies with the request.
  */
 
+import { allow } from "@/lib/rate-limit";
+
 const API_URL = "https://api.groq.com/openai/v1/audio/transcriptions";
 const DEFAULT_MODEL = "whisper-large-v3-turbo";
 
 /** ~30 s of 16 kHz 16-bit mono, well inside Groq's 25 MB limit. */
 const MAX_BYTES = 8 * 1024 * 1024;
-const RATE_LIMIT = { tokens: 60, windowMs: 60_000 };
 
-const buckets = new Map<string, { tokens: number; resetAt: number }>();
-
-function rateLimit(ip: string): boolean {
-  const now = Date.now();
-  const bucket = buckets.get(ip);
-  if (!bucket || now > bucket.resetAt) {
-    buckets.set(ip, {
-      tokens: RATE_LIMIT.tokens - 1,
-      resetAt: now + RATE_LIMIT.windowMs,
-    });
-    return true;
-  }
-  if (bucket.tokens <= 0) return false;
-  bucket.tokens -= 1;
-  return true;
-}
-
-function clientIp(req: Request): string {
-  const fwd = req.headers.get("x-forwarded-for");
-  return fwd?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "local";
-}
+const RATE_LIMIT = 60;
 
 function json(body: unknown, status: number) {
   return Response.json(body, {
@@ -59,7 +40,7 @@ export async function POST(req: Request) {
     );
   }
 
-  if (!rateLimit(clientIp(req))) {
+  if (!allow(req, { scope: "stt", limit: RATE_LIMIT })) {
     return json({ error: "Rate limit exceeded. Try again in a minute." }, 429);
   }
 

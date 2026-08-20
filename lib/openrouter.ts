@@ -15,7 +15,9 @@
  *         google/gemini-2.5-flash             1.73s
  */
 
-const API_URL = "https://openrouter.ai/api/v1/chat/completions";
+export const API_BASE_URL = "https://openrouter.ai/api/v1";
+
+const API_URL = `${API_BASE_URL}/chat/completions`;
 
 export const DEFAULT_MODEL = "google/gemini-2.5-flash-lite";
 export const DEFAULT_FALLBACK_MODEL = "meta-llama/llama-3.3-70b-instruct";
@@ -48,19 +50,27 @@ export function guardModel(): string {
   return process.env.OPENROUTER_GUARD_MODEL || DEFAULT_GUARD_MODEL;
 }
 
-function headers(apiKey: string): HeadersInit {
-  const h: Record<string, string> = {
-    authorization: `Bearer ${apiKey}`,
-    "content-type": "application/json",
-  };
-  // Optional, purely for OpenRouter's dashboard attribution.
+/**
+ * Purely for OpenRouter's dashboard attribution. Exported because `/api/chat/simple` builds its
+ * client through the AI SDK's `createOpenAI` rather than this module's `fetch` calls, and the two
+ * had already drifted onto different env var names once (CLEANUP §2.1). One source, one name.
+ */
+export function attributionHeaders(): Record<string, string> {
+  const h: Record<string, string> = { "x-title": process.env.OPENROUTER_SITE_NAME || "Cura" };
   const referer = process.env.OPENROUTER_SITE_URL;
   if (referer) h["http-referer"] = referer;
-  h["x-title"] = process.env.OPENROUTER_SITE_NAME || "Cura";
   return h;
 }
 
-function requireKey(): string {
+function headers(apiKey: string): HeadersInit {
+  return {
+    authorization: `Bearer ${apiKey}`,
+    "content-type": "application/json",
+    ...attributionHeaders(),
+  };
+}
+
+export function requireKey(): string {
   const key = process.env.OPENROUTER_API_KEY;
   if (!key) throw new OpenRouterError("OPENROUTER_API_KEY is not configured on the server.", 501);
   return key;

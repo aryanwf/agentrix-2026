@@ -12,6 +12,12 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Third-party source we do not author. Linting it buries our own errors
+    // under ~114 vendored ones.
+    "vendor/**",
+    // Same reason: prebuilt onnxruntime + minified VAD worklet shipped as static
+    // assets, not authored here.
+    "public/vad/**",
   ]),
 ]);
 

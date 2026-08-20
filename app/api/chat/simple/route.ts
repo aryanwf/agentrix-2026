@@ -1,3 +1,16 @@
+/**
+ * Text-chat backend for `/chat`. AI SDK v7 UI-message stream, no avatar, no signals.
+ *
+ * `/api/chat` is the other half: SSE with `<<mood:…>>` control lines and sentence splitting for
+ * the avatar. The wire formats genuinely differ, so both routes stay — but everything that is
+ * not wire format (rate limiting, safety gating, prompt, OpenRouter attribution) is shared via
+ * `lib/`, because duplicated safety logic is how one copy quietly goes stale.
+ *
+ * On versions: `@ai-sdk/openai@4` alongside `ai@7` is correct, not a mismatch. The provider
+ * packages version independently of the core; npm dist-tags confirm the pairing (`ai-v6` → 3.x,
+ * `ai-v5` → 2.x, `latest`/v7 → 4.x). Same story for the transitive `@ai-sdk/react@4`.
+ */
+
 import {
   convertToModelMessages,
   createUIMessageStream,
@@ -7,23 +20,19 @@ import {
   type UIMessage,
 } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
-import { CRISIS_SCRIPT } from "@/lib/resources";
+import { gateUserTurn } from "@/lib/chat/gate";
+import { allow, RATE_LIMITED_MESSAGE } from "@/lib/rate-limit";
 import { MAX_MESSAGE_CHARS, MAX_MESSAGES } from "@/lib/chat/types";
 import {
-  isClearlyOffTopic,
-  HUMAN_RESPONSE_INSTRUCTIONS,
-  OFF_TOPIC_REPLY,
-  THERAPIST_SCOPE_INSTRUCTIONS,
-} from "@/lib/prompts";
-import { classifyLexicon } from "@/lib/safety/lexicon";
-import { isCrisis } from "@/lib/safety/types";
+  API_BASE_URL,
+  attributionHeaders,
+  chatModels,
+  OpenRouterError,
+  requireKey,
+} from "@/lib/openrouter";
+import { TEXT_CHAT_SYSTEM_PROMPT } from "@/lib/prompts";
 
 export const maxDuration = 30;
-
-const DEFAULT_MODEL = "openai/gpt-4o-mini";
-const RATE_LIMIT = 20;
-const RATE_WINDOW_MS = 60_000;
-const requests = new Map<string, { count: number; resetAt: number }>();
 
 function json(body: unknown, status: number) {
   return Response.json(body, {
@@ -33,19 +42,16 @@ function json(body: unknown, status: number) {
 }
 
 export async function POST(req: Request) {
-  const now = Date.now();
-  const client = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  const previous = requests.get(client);
-  const bucket = previous && previous.resetAt > now ? previous : { count: 0, resetAt: now + RATE_WINDOW_MS };
-  bucket.count += 1;
-  requests.set(client, bucket);
-  if (bucket.count > RATE_LIMIT) {
-    return json({ error: "Too many requests. Please try again shortly." }, 429);
+  if (!allow(req, { scope: "chat", limit: 20 })) {
+    return json({ error: RATE_LIMITED_MESSAGE }, 429);
   }
 
-  const apiKey = process.env.OPENROUTER_API_KEY;
-  if (!apiKey) {
-    return json({ error: "OPENROUTER_API_KEY is not configured on the server." }, 501);
+  let apiKey: string;
+  try {
+    apiKey = requireKey();
+  } catch (err) {
+    const status = err instanceof OpenRouterError ? (err.status ?? 502) : 502;
+    return json({ error: (err as Error).message }, status);
   }
 
   let body: { messages?: UIMessage[] };
@@ -69,29 +75,23 @@ export async function POST(req: Request) {
     return json({ error: "The last turn must be from the user." }, 400);
   }
 
-  if (isCrisis(classifyLexicon(messageText(lastUser)))) {
-    return fixedTextResponse(messages, CRISIS_SCRIPT);
-  }
-
-  if (isClearlyOffTopic(messageText(lastUser))) {
-    return fixedTextResponse(messages, [OFF_TOPIC_REPLY]);
+  // Safety and scope screening lives in `lib/chat/gate.ts`, shared with the SSE route.
+  const gate = gateUserTurn(messageText(lastUser));
+  if (gate.kind !== "model") {
+    return fixedTextResponse(messages, gate.texts);
   }
 
   const openrouter = createOpenAI({
     apiKey,
-    baseURL: "https://openrouter.ai/api/v1",
-    headers: {
-      "HTTP-Referer": process.env.OPENROUTER_SITE_URL ?? "http://localhost:3000",
-      "X-Title": process.env.OPENROUTER_APP_NAME ?? "CURA",
-    },
+    baseURL: API_BASE_URL,
+    headers: attributionHeaders(),
   });
 
   const result = streamText({
-    model: openrouter(process.env.OPENROUTER_MODEL ?? DEFAULT_MODEL),
-    system: `You are CURA, a warm, grounded therapist-style mental health support companion.
-${THERAPIST_SCOPE_INSTRUCTIONS}
-${HUMAN_RESPONSE_INSTRUCTIONS}
-Use supportive, plain language; ask one gentle question at a time when helpful; suggest evidence-informed practices like breathing, journaling, grounding, reframing, and reaching out to trusted people. If the user mentions self-harm, suicide, abuse, immediate danger, or a medical emergency, encourage contacting local emergency services or a crisis hotline right away and staying with a trusted person.`,
+    // No fallback chain here: this route has no avatar waiting on first audio, so a plain
+    // error is acceptable where `/api/chat` has to keep talking. Same primary model, though.
+    model: openrouter(chatModels()[0]),
+    system: TEXT_CHAT_SYSTEM_PROMPT,
     messages: await convertToModelMessages(messages),
   });
 

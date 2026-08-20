@@ -1,54 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Cura
 
-## Getting Started
+Voice-first, therapy-informed 3D avatar companion. You press Start, you talk, the avatar
+listens, thinks, and talks back with lip-sync. Hackathon MVP — no auth, no tests, no CI.
 
-First, run the development server:
+Cura is a "therapy-informed guide", never a therapist. No diagnosis, no medication talk.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Voice pipeline
+
+```
+mic → VAD (silence = turn ended) → /api/stt (Groq Whisper) → transcript
+   → /api/chat (SSE, OpenRouter + safety) → sentences
+   → /api/tts (ElevenLabs w/ timings) → TalkingHead.speakAudio() → visemes + subtitles
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Safety: every user turn is screened in one place (`lib/chat/gate.ts`) — a four-tier lexicon
+classifier (`lib/safety/lexicon.ts`). Crisis-tier turns bypass the model entirely and return
+the fixed `CRISIS_SCRIPT`; the reply is never a generation.
 
-## OpenRouter API
+## Routes
 
-The `/api/chat/simple` route uses the Vercel AI SDK with OpenRouter. Configure the server with:
+| Route | What it is |
+|---|---|
+| `/` | Landing page |
+| `/session` | **The product.** Voice loop, avatar, safety |
+| `/3d` | Developer bench: type text, hear it, poke moods and gestures |
+| `/chat` | Text-only chat, no avatar |
+| `/journal` | Journal entries, Supabase-backed |
 
-```bash
-OPENROUTER_API_KEY=your_openrouter_key
-OPENROUTER_MODEL=openai/gpt-4o-mini
-OPENROUTER_SITE_URL=http://localhost:3000
-OPENROUTER_APP_NAME=CURA
-```
+API routes: `/api/chat` (SSE with signals, used by `/session`), `/api/chat/simple`
+(AI SDK UI-message stream, used by `/chat`), `/api/stt`, `/api/tts`, `/api/barge`, `/api/journal`.
 
-Only `OPENROUTER_API_KEY` is required. Install dependencies and run locally with Bun:
+## Setup
+
+Requires [Bun](https://bun.sh) (the repo pins `bun@1.3.14` via `packageManager`; `bun.lock`
+is the only lockfile).
 
 ```bash
 bun install
+cp .env.example .env   # fill in keys
 bun dev
 ```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | Required | Used by |
+|---|---|---|
+| `OPENROUTER_API_KEY` | yes | Chat (`/api/chat`, `/api/chat/simple`) |
+| `OPENROUTER_MODEL` | no | Primary chat model (default `google/gemini-2.5-flash-lite`) |
+| `OPENROUTER_FALLBACK_MODEL` | no | Fallback when the primary fails |
+| `OPENROUTER_GUARD_MODEL` | no | Off-topic guard |
+| `OPENROUTER_SITE_URL` / `OPENROUTER_SITE_NAME` | no | OpenRouter attribution headers |
+| `ELEVENLABS_API_KEY` | yes | TTS |
+| `ELEVENLABS_VOICE_ID` | yes | TTS voice |
+| `ELEVENLABS_MODEL_ID` | no | Default `eleven_flash_v2_5` |
+| `ELEVENLABS_OUTPUT_FORMAT` | no | Default `mp3_44100_128` |
+| `TTS_CACHE_DIR` | no | Disk cache for generated speech |
+| `GROQ_API_KEY` | yes | Speech-to-text |
+| `GROQ_STT_MODEL` | no | Default `whisper-large-v3-turbo` |
+| `GROQ_STT_PROMPT` | no | STT biasing prompt |
+| `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` | for `/journal` | Journal persistence |
 
-## Learn More
+The service-role key bypasses RLS — server-only, never `NEXT_PUBLIC_`. See
+`supabase/README.md` for the journal table setup.
 
-To learn more about Next.js, take a look at the following resources:
+## Build
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+bun run build
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Layout
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `app/` — Next.js App Router pages and API routes
+- `components/` — `SessionClient` (voice loop), `Studio3D` (bench), `AvatarStage` (shared avatar mount)
+- `lib/` — chat gate, safety lexicon, prompts, OpenRouter client, TTS queue/alignment, voice (VAD/STT/WAV), sentences
+- `vendor/talkinghead/` — vendored TalkingHead (see its README for why)
+- `public/avatars/`, `public/vad/` — avatar GLB and Silero VAD model

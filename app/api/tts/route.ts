@@ -3,6 +3,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { alignmentToWords, type Alignment, type WordTimings } from "@/lib/tts/alignment";
+import { allow } from "@/lib/rate-limit";
 
 const API_BASE = "https://api.elevenlabs.io/v1";
 const DEFAULT_MODEL = "eleven_flash_v2_5";
@@ -10,26 +11,7 @@ const DEFAULT_VOICE = "EXAVITQu4vr4xnSDxMaL";
 const DEFAULT_FORMAT = "mp3_44100_128";
 
 const MAX_CHARS = 400;
-const RATE_LIMIT = { tokens: 30, windowMs: 60_000 };
-
-const buckets = new Map<string, { tokens: number; resetAt: number }>();
-
-function rateLimit(ip: string): boolean {
-  const now = Date.now();
-  const bucket = buckets.get(ip);
-  if (!bucket || now > bucket.resetAt) {
-    buckets.set(ip, { tokens: RATE_LIMIT.tokens - 1, resetAt: now + RATE_LIMIT.windowMs });
-    return true;
-  }
-  if (bucket.tokens <= 0) return false;
-  bucket.tokens -= 1;
-  return true;
-}
-
-function clientIp(req: Request): string {
-  const fwd = req.headers.get("x-forwarded-for");
-  return fwd?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "local";
-}
+const RATE_LIMIT = 30;
 
 function json(body: unknown, status: number) {
   return Response.json(body, { status, headers: { "cache-control": "no-store" } });
@@ -117,7 +99,7 @@ export async function POST(req: Request) {
     return json({ error: "ELEVENLABS_API_KEY is not configured on the server." }, 501);
   }
 
-  if (!rateLimit(clientIp(req))) {
+  if (!allow(req, { scope: "tts", limit: RATE_LIMIT })) {
     return json({ error: "Rate limit exceeded. Try again in a minute." }, 429);
   }
 

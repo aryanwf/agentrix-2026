@@ -7,6 +7,18 @@ Ship the demo path only.
 
 You press Start, you talk, a 3D avatar listens, thinks, and talks back with lip-sync.
 
+## Routes
+
+| Route | What it is |
+|---|---|
+| `/` | Landing page. Start → `/session`. |
+| `/session` | **The product.** `SessionClient`: voice loop, avatar, safety. |
+| `/3d` | Developer bench. `Studio3D`: type text, hear it, poke moods and gestures. |
+| `/chat` | Text-only fallback, no avatar. |
+| `/journal` | Journal entries, Supabase-backed. |
+
+`/session` and `/3d` are not two harnesses — both mount the one `components/AvatarStage.tsx`.
+
 ## Pipeline
 
 ```
@@ -22,13 +34,13 @@ mic → VAD (silence = turn ended) → /api/stt (Groq Whisper) → transcript
 | # | Thing | Where |
 |---|---|---|
 | 1 | 3D avatar, local GLB, lip-sync, moods, gestures | `lib/talkinghead.ts`, `components/AvatarStage.tsx`, `public/avatars/cura.glb` |
-| 2 | Turbopack ↔ TalkingHead build fix | `patches/@met4citizen%2Ftalkinghead@1.7.0.patch` |
+| 2 | TalkingHead bundler fix (vendored, one-hunk patch) | `vendor/talkinghead/` + `README.md` there |
 | 3 | SSE chat route: streaming, signals, model fallback chain, timeouts | `app/api/chat/route.ts`, `lib/openrouter.ts` |
 | 4 | Streaming sentence splitter | `lib/sentences.ts` |
 | 5 | ElevenLabs TTS proxy + disk cache + word timings | `app/api/tts/route.ts`, `lib/tts/alignment.ts` |
 | 6 | Pipelined gapless speech queue with cancel | `lib/tts/queue.ts` |
 | 7 | Session orchestrator: text in → avatar speaks, abort-on-new-turn | `components/SessionClient.tsx` |
-| 8 | **Safety: real lexicon + LLM guard raced in the route + crisis card** | `lib/safety/lexicon.ts`, `lib/safety/classify.ts`, `components/session/CrisisCard.tsx` |
+| 8 | **Safety: real lexicon classifier + crisis bypass in one gate + crisis state in the session** | `lib/safety/lexicon.ts`, `lib/chat/gate.ts`, `components/SessionClient.tsx` |
 | 9 | Landing page, text chat fallback, journal | `app/page.tsx`, `app/chat`, `app/journal` |
 | 10 | All 4 API keys set and working | `.env` (OpenRouter, ElevenLabs, Groq) |
 | 11 | **Voice in: Silero VAD + Groq Whisper, full loop wired** | `lib/voice/{vad,stt,wav}.ts`, `app/api/stt/route.ts`, `public/vad/`, `components/SessionClient.tsx` |
@@ -58,7 +70,6 @@ is the agent's brain, memory, and the exercises.
 
 ### 3. Exercises + deploy
 - `BreathingExercise` (4-7-8) + `GroundingExercise` (5-4-3-2-1), voiced by the avatar, fired by `suggest`
-- Routes: `/3d` = the product, `/3d/bench` = Studio3D, `/session` redirects
 - `GET /api/health` (all providers green), deploy to Vercel with all 4 keys
 
 **Done when:** public URL works on a phone.

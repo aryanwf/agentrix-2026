@@ -1,3 +1,5 @@
+import { gateUserTurn } from "@/lib/chat/gate";
+import { allow, RATE_LIMITED_MESSAGE } from "@/lib/rate-limit";
 import {
   MAX_MESSAGES,
   MAX_MESSAGE_CHARS,
@@ -5,16 +7,8 @@ import {
   type ChatRequest,
 } from "@/lib/chat/types";
 import { OpenRouterError, streamChat, type ChatMessage, type StreamSink } from "@/lib/openrouter";
-import {
-  COMPANION_SYSTEM_PROMPT,
-  isClearlyOffTopic,
-  OFF_TOPIC_REPLY,
-  SignalExtractor,
-  sanitizeForSpeech,
-} from "@/lib/prompts";
-import { CRISIS_SCRIPT, FALLBACK_REPLY } from "@/lib/resources";
-import { classifyLexicon } from "@/lib/safety/lexicon";
-import { isCrisis, type RiskTier } from "@/lib/safety/types";
+import { COMPANION_SYSTEM_PROMPT, SignalExtractor, sanitizeForSpeech } from "@/lib/prompts";
+import { FALLBACK_REPLY } from "@/lib/resources";
 import { SentenceSplitter } from "@/lib/sentences";
 
 // Node runtime: `streamChat` uses long-lived fetch streaming and the guard model call added in
@@ -25,6 +19,10 @@ export const maxDuration = 30;
 const encoder = new TextEncoder();
 
 export async function POST(req: Request) {
+  if (!allow(req, { scope: "chat", limit: 20 })) {
+    return Response.json({ error: RATE_LIMITED_MESSAGE }, { status: 429 });
+  }
+
   let body: ChatRequest;
   try {
     body = await req.json();
@@ -89,25 +87,18 @@ type RunContext = {
 
 async function run({ messages, userText, signal, send }: RunContext): Promise<void> {
   // 1. Safety first, and never on the client's word — `clientRisk` from the request is ignored.
-  const tier: RiskTier = classifyLexicon(userText);
-  send({ type: "risk", tier, source: "lexicon" });
+  //    `gateUserTurn` is shared with `/api/chat/simple`; only the wire format differs.
+  const gate = gateUserTurn(userText);
+  send({ type: "risk", tier: gate.tier, source: "lexicon" });
 
-  // 2. Crisis bypasses the model entirely. A fixed script is the whole point — a generated one
-  //    could be talked out of itself, and this is the one moment that must not vary.
-  if (isCrisis(tier)) {
-    send({ type: "mood", value: "neutral" });
-    CRISIS_SCRIPT.forEach((text, index) => send({ type: "sentence", index, text }));
+  if (gate.kind !== "model") {
+    if (gate.kind === "crisis") send({ type: "mood", value: "neutral" });
+    gate.texts.forEach((text, index) => send({ type: "sentence", index, text }));
     send({ type: "done" });
     return;
   }
 
-  if (isClearlyOffTopic(userText)) {
-    send({ type: "sentence", index: 0, text: OFF_TOPIC_REPLY });
-    send({ type: "done" });
-    return;
-  }
-
-  // 3. Normal path.
+  // 2. Normal path.
   // TODO(step 4): race the guard model against this stream. If it returns high/imminent mid-flight,
   // stop forwarding sentences, emit a `risk` event, then append CRISIS_SCRIPT.
   const extractor = new SignalExtractor();

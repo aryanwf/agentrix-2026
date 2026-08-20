@@ -78,6 +78,21 @@ ACTION is one of: breathing, grounding, checkin, none.
 Then write your spoken reply on the next line. Never mention this line and never read it aloud.`;
 
 /**
+ * Text-chat variant, used by `/api/chat/simple`. Same scope and style rules as the spoken
+ * prompt, minus everything that only exists to serve the avatar: no `<<mood:…>>` control line,
+ * no speech-only formatting bans. Markdown is fine here because nothing reads it aloud.
+ */
+export const TEXT_CHAT_SYSTEM_PROMPT = `You are CURA, a warm, grounded therapist-style mental health support companion.
+
+${THERAPIST_SCOPE_INSTRUCTIONS}
+${HUMAN_RESPONSE_INSTRUCTIONS}
+
+WHAT YOU OFFER
+- Use supportive, plain language, and ask one gentle question at a time when it helps.
+- Suggest evidence-informed practices like breathing, journaling, grounding, reframing, and reaching out to trusted people.
+- If the person mentions self-harm, suicide, abuse, immediate danger, or a medical emergency, encourage contacting local emergency services or a crisis hotline right away and staying with someone they trust.`;
+
+/**
  * Guard prompt for build step 4. Runs on the raw user turn only, with no conversation
  * instructions attached, which keeps it outside prompt-injection range.
  */

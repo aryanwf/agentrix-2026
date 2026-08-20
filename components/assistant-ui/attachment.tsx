@@ -1,6 +1,12 @@
 "use client";
 
-import { type PropsWithChildren, useEffect, useState, type FC } from "react";
+import {
+  type PropsWithChildren,
+  useEffect,
+  useMemo,
+  useState,
+  type FC,
+} from "react";
 import {
   XIcon,
   PlusIcon,
@@ -37,21 +43,23 @@ import { TooltipIconButton } from "@/components/assistant-ui/tooltip-icon-button
 import { cn } from "@/lib/utils";
 
 const useFileSrc = (file: File | undefined) => {
-  const [src, setSrc] = useState<string | undefined>(undefined);
+  // Manual fix for assistant-ui registry component (see CLEANUP.md 3.1):
+  // upstream calls setSrc(...) synchronously inside a useEffect, which
+  // react-hooks/set-state-in-effect flags as a possible cascading render.
+  // URL.createObjectURL is synchronous, so the object URL can be derived
+  // directly with useMemo instead of state + effect; the effect is then
+  // only responsible for revoking the previous URL on cleanup, and never
+  // calls setState.
+  const src = useMemo(
+    () => (file ? URL.createObjectURL(file) : undefined),
+    [file],
+  );
 
   useEffect(() => {
-    if (!file) {
-      setSrc(undefined);
-      return;
-    }
-
-    const objectUrl = URL.createObjectURL(file);
-    setSrc(objectUrl);
-
     return () => {
-      URL.revokeObjectURL(objectUrl);
+      if (src) URL.revokeObjectURL(src);
     };
-  }, [file]);
+  }, [src]);
 
   return src;
 };

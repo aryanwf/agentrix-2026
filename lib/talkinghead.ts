@@ -45,6 +45,10 @@ export async function loadTalkingHead(
   node: HTMLElement,
   { options, avatar, onProgress }: LoadOptions = {},
 ): Promise<TalkingHead> {
+  // Loads the *vendored* copy, not the npm package — which is why the package is not installed.
+  // Upstream v1.7.0 builds its lipsync module specifier by string concatenation, which no bundler
+  // can resolve, so lip-sync silently never loads. `vendor/talkinghead/README.md` has the one-hunk
+  // patch, the upstream link, and the upgrade path. Not a Turbopack-only issue: webpack fails too.
   const { TalkingHead: TalkingHeadClass } = (await import(
     "../vendor/talkinghead/talkinghead.mjs"
   )) as unknown as {

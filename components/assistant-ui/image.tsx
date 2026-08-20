@@ -5,6 +5,7 @@ import {
   useState,
   useEffect,
   useRef,
+  useSyncExternalStore,
   type PropsWithChildren,
 } from "react";
 import { createPortal } from "react-dom";
@@ -253,13 +254,23 @@ type ImageZoomProps = PropsWithChildren<{
   alt?: string;
 }>;
 
-function ImageZoom({ src, alt = "Image preview", children }: ImageZoomProps) {
-  const [isMounted, setIsMounted] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
+// Manual fix for assistant-ui registry component (see CLEANUP.md 3.2):
+// upstream tracked "mounted" (i.e. client-only, for the createPortal below)
+// with useState + a setState call inside an empty-deps useEffect, which
+// react-hooks/set-state-in-effect flags as a synchronous setState-in-effect.
+// useSyncExternalStore with a no-op subscribe is the standard client/server
+// mismatch guard and never calls setState.
+const emptySubscribe = () => () => {};
+const useIsMounted = () =>
+  useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+function ImageZoom({ src, alt = "Image preview", children }: ImageZoomProps) {
+  const isMounted = useIsMounted();
+  const [isOpen, setIsOpen] = useState(false);
 
   const handleOpen = () => setIsOpen(true);
   const handleClose = () => setIsOpen(false);

@@ -12,13 +12,11 @@
  */
 
 import { complete, guardModel, OpenRouterError } from "@/lib/openrouter";
+import { allow } from "@/lib/rate-limit";
 
 export const maxDuration = 15;
 
 const RATE_LIMIT = 60;
-const RATE_WINDOW_MS = 60_000;
-const requests = new Map<string, { count: number; resetAt: number }>();
-
 const MAX_CHARS = 600;
 const TIMEOUT_MS = 3_000;
 
@@ -44,16 +42,8 @@ function json(body: unknown, status: number) {
 }
 
 export async function POST(req: Request) {
-  const now = Date.now();
-  const client = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  const previous = requests.get(client);
-  const bucket =
-    previous && previous.resetAt > now
-      ? previous
-      : { count: 0, resetAt: now + RATE_WINDOW_MS };
-  bucket.count += 1;
-  requests.set(client, bucket);
-  if (bucket.count > RATE_LIMIT) {
+  // Fails toward `respond`, same as every other failure path in this route.
+  if (!allow(req, { scope: "barge", limit: RATE_LIMIT })) {
     return json({ decision: "respond", reason: "rate-limited" }, 429);
   }
 
@@ -94,8 +84,8 @@ export async function POST(req: Request) {
     const decision: BargeDecision = /continue/i.test(raw) ? "continue" : "respond";
     return json({ decision }, 200);
   } catch (err) {
-    // Timeout, missing key, upstream failure — all resolve the same way. Answering the user is the
-    // safe default; silently finishing an old thought over a real question is not.
+    
+    
     const status = err instanceof OpenRouterError && err.status === 501 ? 501 : 200;
     return json({ decision: "respond", reason: "unavailable" }, status);
   }

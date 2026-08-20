@@ -2,7 +2,7 @@
 
 1. Create a Supabase project.
 2. Open the SQL editor and run `supabase/journal_entries.sql`.
-3. Add these variables to `.env.local`:
+3. Add these variables to `.env` (the project keeps all env vars there, not `.env.local`):
 
 ```bash
 SUPABASE_URL=https://your-project.supabase.co
