@@ -8,11 +8,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 const starters = [
-  "Help me plan a product roadmap",
-  "Review this idea like a senior engineer",
-  "Draft a clear answer for my team",
-  "Debug a Next.js issue step by step",
+  "I feel anxious and need to slow down",
+  "Help me process a difficult conversation",
+  "Guide me through a quick grounding exercise",
+  "I want to journal about what I am feeling",
 ];
+
+const recentChats = ["Anxiety check-in", "Grounding practice", "Sleep worries"];
 
 function messageText(message: ReturnType<typeof useChat>["messages"][number]) {
   return message.parts
@@ -61,32 +63,32 @@ export default function ChatPage() {
   }
 
   return (
-    <main className="flex min-h-dvh bg-[#f7f7f5] text-zinc-950">
-      <aside className="hidden w-72 shrink-0 border-r border-zinc-200/80 bg-[#f1f1ee] p-3 lg:flex lg:flex-col">
+    <main className="flex min-h-dvh bg-zinc-50 text-black dark:bg-black dark:text-zinc-50">
+      <aside className="hidden w-72 shrink-0 border-r border-black/[.08] bg-white p-3 dark:border-white/[.145] dark:bg-black lg:flex lg:flex-col">
         <div className="mb-3 flex items-center gap-2 px-2 py-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-zinc-950 text-sm font-semibold text-white">
-            A
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-foreground text-sm font-semibold text-background">
+            C
           </div>
           <div>
-            <p className="text-sm font-semibold leading-none">Agentrix</p>
-            <p className="mt-1 text-xs text-zinc-500">OpenRouter workspace</p>
+            <p className="text-sm font-semibold leading-none">CURA</p>
+            <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">Therapy companion</p>
           </div>
         </div>
 
         <Button
-          className="mb-5 justify-start rounded-xl bg-white text-zinc-900 hover:bg-white"
+          className="mb-5 justify-start rounded-xl border-black/[.08] bg-white text-zinc-950 hover:bg-black/[.04] dark:border-white/[.145] dark:bg-black dark:text-zinc-50 dark:hover:bg-[#1a1a1a]"
           onClick={() => window.location.reload()}
           type="button"
           variant="outline"
         >
-          New chat
+          New check-in
         </Button>
 
         <div className="space-y-1 text-sm">
-          <p className="px-3 pb-2 text-xs font-medium text-zinc-500">Today</p>
-          {["Ideal chatbot build", "Avatar assistant notes", "Product polish pass"].map((item) => (
+          <p className="px-3 pb-2 text-xs font-medium text-zinc-600 dark:text-zinc-400">Today</p>
+          {recentChats.map((item) => (
             <button
-              className="w-full truncate rounded-xl px-3 py-2 text-left text-zinc-700 hover:bg-white"
+              className="w-full truncate rounded-xl px-3 py-2 text-left text-zinc-700 hover:bg-black/[.04] dark:text-zinc-400 dark:hover:bg-[#1a1a1a]"
               key={item}
               type="button"
             >
@@ -95,23 +97,23 @@ export default function ChatPage() {
           ))}
         </div>
 
-        <div className="mt-auto rounded-2xl border border-zinc-200 bg-white p-3 text-xs leading-5 text-zinc-500">
-          Model and keys stay server-side. Set OPENROUTER_MODEL to switch providers.
+        <div className="mt-auto rounded-2xl border border-black/[.08] bg-zinc-50 p-3 text-xs leading-5 text-zinc-600 dark:border-white/[.145] dark:bg-[#1a1a1a] dark:text-zinc-400">
+          CURA can support reflection and coping skills, but it is not a replacement for professional care.
         </div>
       </aside>
 
       <section className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-zinc-200/80 bg-[#f7f7f5]/90 px-4 backdrop-blur sm:px-6">
+        <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-black/[.08] bg-zinc-50/90 px-4 backdrop-blur dark:border-white/[.145] dark:bg-black/90 sm:px-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-zinc-950 text-sm font-semibold text-white lg:hidden">
-              A
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-foreground text-sm font-semibold text-background lg:hidden">
+              C
             </div>
             <div>
-              <h1 className="text-sm font-semibold">Agentrix Chat</h1>
-              <p className="text-xs text-zinc-500">AI SDK + OpenRouter</p>
+              <h1 className="text-sm font-semibold">CURA</h1>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400">A gentle space to check in</p>
             </div>
           </div>
-          <div className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs text-zinc-600 shadow-sm">
+          <div className="rounded-full border border-black/[.08] bg-white px-3 py-1 text-xs text-zinc-600 shadow-sm dark:border-white/[.145] dark:bg-black dark:text-zinc-400">
             {isStreaming ? "Responding" : "Ready"}
           </div>
         </header>
@@ -120,20 +122,20 @@ export default function ChatPage() {
           <div className="mx-auto flex min-h-[calc(100dvh-13rem)] w-full max-w-3xl flex-col py-8 sm:py-12">
             {!hasMessages ? (
               <div className="m-auto w-full text-center">
-                <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-950 text-xl font-semibold text-white shadow-sm">
-                  A
+                <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-foreground text-xl font-semibold text-background shadow-sm">
+                  C
                 </div>
                 <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-                  What are we building today?
+                  How are you feeling today?
                 </h2>
-                <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-zinc-500 sm:text-base">
-                  Ask for strategy, code, writing, debugging, or a second opinion.
-                  Agentrix keeps answers practical and direct.
+                <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-zinc-600 dark:text-zinc-400 sm:text-base">
+                  CURA helps you pause, reflect, and choose a small next step.
+                  Share what is on your mind in your own words.
                 </p>
                 <div className="mt-8 grid gap-3 text-left sm:grid-cols-2">
                   {starters.map((starter) => (
                     <button
-                      className="rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-700 shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50"
+                      className="rounded-2xl border border-black/[.08] bg-white p-4 text-sm text-zinc-700 shadow-sm transition hover:bg-black/[.04] dark:border-white/[.145] dark:bg-black dark:text-zinc-400 dark:hover:bg-[#1a1a1a]"
                       key={starter}
                       onClick={() => setInput(starter)}
                       type="button"
@@ -153,16 +155,16 @@ export default function ChatPage() {
                       key={message.id}
                     >
                       {!isUser ? (
-                        <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-zinc-950 text-xs font-semibold text-white">
-                          A
+                        <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-foreground text-xs font-semibold text-background">
+                          C
                         </div>
                       ) : null}
                       <div
                         className={cn(
                           "max-w-[86%] whitespace-pre-wrap text-[15px] leading-7 sm:max-w-[75%]",
                           isUser
-                            ? "rounded-3xl bg-[#e9e9e4] px-5 py-3 text-zinc-900"
-                            : "text-zinc-900",
+                            ? "rounded-3xl bg-black/[.04] px-5 py-3 text-black dark:bg-white/[.08] dark:text-zinc-50"
+                            : "text-black dark:text-zinc-50",
                         )}
                       >
                         {messageText(message)}
@@ -181,20 +183,22 @@ export default function ChatPage() {
           </div>
         </ScrollArea>
 
-        <div className="sticky bottom-0 bg-gradient-to-t from-[#f7f7f5] via-[#f7f7f5] to-transparent px-4 pb-4 pt-8">
+        <div className="sticky bottom-0 bg-gradient-to-t from-zinc-50 via-zinc-50 to-transparent px-4 pb-4 pt-8 dark:from-black dark:via-black">
           <form className="mx-auto max-w-3xl" onSubmit={submit}>
-            <div className="rounded-[1.75rem] border border-zinc-200 bg-white p-2 shadow-[0_18px_50px_rgba(24,24,27,0.12)]">
+            <div className="rounded-[1.75rem] border border-black/[.08] bg-white p-2 shadow-[0_18px_50px_rgba(24,24,27,0.12)] dark:border-white/[.145] dark:bg-black">
               <Textarea
-                aria-label="Message Agentrix"
-                className="max-h-44 min-h-12"
+                aria-label="Message CURA"
+                className="max-h-44 min-h-12 dark:text-zinc-50 dark:placeholder:text-zinc-500"
                 onChange={(event) => setInput(event.target.value)}
                 onKeyDown={onKeyDown}
-                placeholder="Message Agentrix"
+                placeholder="Message CURA"
                 rows={1}
                 value={input}
               />
               <div className="flex items-center justify-between gap-3 px-2 pb-1">
-                <p className="text-xs text-zinc-400">Enter to send. Shift + Enter for a new line.</p>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                  If you are in immediate danger, contact local emergency services now.
+                </p>
                 {isStreaming ? (
                   <Button aria-label="Stop response" onClick={stop} size="icon" type="button">
                     <SquareIcon />

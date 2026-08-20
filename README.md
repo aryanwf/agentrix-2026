@@ -24,7 +24,7 @@ The `/chat` route uses the Vercel AI SDK with OpenRouter. Configure the server w
 OPENROUTER_API_KEY=your_openrouter_key
 OPENROUTER_MODEL=openai/gpt-4o-mini
 OPENROUTER_SITE_URL=http://localhost:3000
-OPENROUTER_APP_NAME=Agentrix 2026
+OPENROUTER_APP_NAME=CURA
 ```
 
 Only `OPENROUTER_API_KEY` is required. Install dependencies and run locally with Bun:
