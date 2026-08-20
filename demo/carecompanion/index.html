@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CareCompanion — lip-sync smoke test</title>
+<style>
+  body { margin:0; background:#12161c; color:#e6edf3;
+         font-family: system-ui, sans-serif; display:flex; height:100vh; }
+  #avatar { flex:1; position:relative; }
+  #panel  { width:340px; padding:20px; background:#0d1117;
+            border-left:1px solid #222; display:flex; flex-direction:column; gap:12px; }
+  h1 { font-size:15px; margin:0 0 4px; letter-spacing:.3px; }
+  p.sub { font-size:12px; color:#8b949e; margin:0 0 8px; line-height:1.5; }
+  textarea { width:100%; height:90px; background:#161b22; color:#e6edf3;
+             border:1px solid #30363d; border-radius:6px; padding:8px;
+             font-family:inherit; font-size:13px; resize:vertical; }
+  button { padding:10px; border:0; border-radius:6px; background:#238636;
+           color:#fff; font-size:13px; font-weight:600; cursor:pointer; }
+  button:disabled { background:#30363d; color:#8b949e; cursor:not-allowed; }
+  button.alt { background:#1f6feb; }
+  #log { margin-top:auto; font-size:11px; color:#8b949e; white-space:pre-wrap;
+         line-height:1.6; max-height:220px; overflow:auto; }
+  #loading { position:absolute; inset:0; display:flex; align-items:center;
+             justify-content:center; font-size:13px; color:#8b949e; }
+</style>
+</head>
+<body>
+
+<div id="avatar"><div id="loading">loading avatar…</div></div>
+
+<div id="panel">
+  <h1>CareCompanion</h1>
+  <p class="sub">Lip-sync smoke test. No API key required &mdash; speech runs
+     fully in-browser via HeadTTS (Kokoro).</p>
+
+  <textarea id="text">I'm really glad you came back today. Take your time — there's no rush at all. How has this week been feeling for you?</textarea>
+
+  <button id="speak" disabled>Speak (in-browser TTS)</button>
+  <button id="mood" class="alt">Cycle mood</button>
+  <button id="gesture" class="alt">Wave / gesture</button>
+
+  <div id="log"></div>
+</div>
+
+<script type="importmap">
+{ "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
+    "talkinghead": "https://cdn.jsdelivr.net/gh/met4citizen/TalkingHead@1.7/modules/talkinghead.mjs",
+    "headtts": "https://cdn.jsdelivr.net/npm/@met4citizen/headtts@1.3/+esm"
+} }
+</script>
+
+<script type="module">
+import { TalkingHead } from "talkinghead";
+import { HeadTTS }     from "headtts";
+
+const $   = id => document.getElementById(id);
+const log = m  => { $("log").textContent += m + "\n";
+                    $("log").scrollTop = $("log").scrollHeight;
+                    console.log(m); };
+
+// ---------------------------------------------------------------- avatar
+const head = new TalkingHead($("avatar"), {
+  ttsEndpoint: null,          // not used: audio comes from HeadTTS
+  lipsyncModules: ["en"],
+  lipsyncLang: "en",
+  cameraView: "upper",        // face-focused = better connection + cheaper
+  cameraRotateEnable: false,
+  modelFPS: 30,
+  avatarMood: "neutral",
+  avatarIdleEyeContact: 0.3,
+  avatarSpeakingEyeContact: 0.6,
+  avatarListeningEyeContact: 0.7
+});
+
+try {
+  await head.showAvatar(
+    { url: "https://cdn.jsdelivr.net/gh/met4citizen/TalkingHead@1.7/avatars/brunette.glb",
+      body: "F", avatarMood: "neutral", lipsyncLang: "en" },
+    e => { if (e.lengthComputable)
+             $("loading").textContent =
+               `loading avatar… ${Math.round(e.loaded/e.total*100)}%`; }
+  );
+  $("loading").remove();
+  log("avatar ready");
+} catch (err) { log("AVATAR FAILED: " + err); }
+
+// ---------------------------------------------------------------- tts
+const headtts = new HeadTTS({
+  endpoints: ["webgpu", "wasm"],       // later: ["ws://127.0.0.1:8882", "webgpu"]
+  audioCtx: head.audioCtx,             // share context so timing lines up
+  languages: ["en-us"],
+  voices: ["af_bella"],
+  workerModule:  "https://cdn.jsdelivr.net/npm/@met4citizen/headtts@1.3/modules/worker-tts.mjs",
+  dictionaryURL: "https://cdn.jsdelivr.net/npm/@met4citizen/headtts@1.3/dictionaries/"
+});
+
+headtts.onmessage = msg => {
+  if (msg.type === "audio") {
+    head.speakAudio(msg.data, {}, w => {});   // <- visemes drive the mouth here
+  } else if (msg.type === "error") {
+    log("TTS error: " + msg.data.error);
+  }
+};
+
+log("connecting TTS (first run downloads the model — be patient)…");
+try {
+  await headtts.connect();
+  await headtts.setup({ voice: "af_bella", language: "en-us",
+                        speed: 1, audioEncoding: "wav" });
+  $("speak").disabled = false;
+  log("TTS ready — click Speak");
+} catch (err) {
+  log("TTS FAILED: " + err + "\n(no WebGPU? try desktop Chrome/Edge)");
+}
+
+// ---------------------------------------------------------------- ui
+$("speak").onclick = async () => {
+  await head.audioCtx.resume();              // autoplay policy needs a gesture
+  const t = $("text").value.trim();
+  if (!t) return;
+  log("speaking: " + t.slice(0, 40) + "…");
+  // split into sentences — this is the streaming pattern you'll reuse with the LLM
+  for (const s of t.match(/[^.!?]+[.!?]*/g) || [t]) {
+    headtts.synthesize({ input: s.trim() });
+  }
+};
+
+const moods = ["neutral","happy","sad","love","fear","angry"];
+let mi = 0;
+$("mood").onclick = () => {
+  const m = moods[mi++ % moods.length];
+  head.setMood(m); log("mood → " + m);
+};
+
+$("gesture").onclick = () => {
+  head.playGesture("handup", 3);
+  head.lookAtCamera(2000);
+  log("gesture → handup");
+};
+</script>
+</body>
+</html>
