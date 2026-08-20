@@ -1,13 +1,21 @@
 "use client";
 
+import { Mic, MicOff } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { streamChat } from "@/lib/chat/client";
-import { MAX_MESSAGES, type ChatEvent, type RiskTier, type SuggestAction } from "@/lib/chat/types";
+import {
+  MAX_MESSAGES,
+  type ChatEvent,
+  type RiskTier,
+  type SuggestAction,
+} from "@/lib/chat/types";
 import { HELPLINES } from "@/lib/resources";
 import { isCrisis } from "@/lib/safety/types";
 import { getTtsStatus } from "@/lib/tts/client";
 import { SpeechQueue } from "@/lib/tts/queue";
+import { transcribe } from "@/lib/voice/stt";
+import type { VadHandle } from "@/lib/voice/vad";
 import type { AvatarHandle } from "./AvatarStage";
 
 // `ssr: false` is mandatory (WebGL + window) and, per the Next 16 docs, is only valid inside a
@@ -21,8 +29,12 @@ const AvatarStage = dynamic(() => import("./AvatarStage"), {
   ),
 });
 
-/** PLAN §5.1. `listening` arrives with the mic in build step 3. */
-type SessionState = "idle" | "ready" | "thinking" | "speaking" | "crisis";
+/**
+ * PLAN §5.1. With voice on, `ready` *is* the listening state — the mic is hot exactly when nothing
+ * else is happening, so the loop reads: ready → transcribing → thinking → speaking → ready.
+ */
+type SessionState =
+  "idle" | "ready" | "transcribing" | "thinking" | "speaking" | "crisis";
 
 type Turn = { role: "user" | "assistant"; content: string };
 
@@ -31,6 +43,9 @@ export default function SessionClient() {
   const abortRef = useRef<AbortController | null>(null);
   const queueRef = useRef<SpeechQueue | null>(null);
   const turnStartRef = useRef<number>(0);
+  const vadRef = useRef<VadHandle | null>(null);
+  /** VAD callbacks are registered once but must always call the *current* send. */
+  const sendRef = useRef<(text: string) => Promise<void>>(async () => {});
 
   const [avatarReady, setAvatarReady] = useState(false);
   const [state, setState] = useState<SessionState>("idle");
@@ -42,13 +57,18 @@ export default function SessionClient() {
   const [suggestion, setSuggestion] = useState<SuggestAction | null>(null);
   const [firstAudioMs, setFirstAudioMs] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [voice, setVoice] = useState(false);
+  const [micBusy, setMicBusy] = useState(false);
+  const [speechLevel, setSpeechLevel] = useState(0);
 
   // No key configured → animate visemes from estimated timings instead of failing. The session
   // stays usable (and free) without ElevenLabs.
   useEffect(() => {
     const controller = new AbortController();
     getTtsStatus(controller.signal)
-      .then((status) => !controller.signal.aborted && setMuted(!status.configured))
+      .then(
+        (status) => !controller.signal.aborted && setMuted(!status.configured),
+      )
       .catch(() => !controller.signal.aborted && setMuted(true));
     return () => controller.abort();
   }, []);
@@ -61,110 +81,186 @@ export default function SessionClient() {
     [],
   );
 
-  const start = useCallback(async () => {
-    // The only place AudioContext.resume() may run is inside a user gesture.
-    await avatar.current?.resumeAudio();
-    setState("ready");
+  const send = useCallback(
+    async (input: string) => {
+      const text = input.trim();
+      if (!text || state === "idle" || state === "crisis") return;
+
+      // One in-flight turn at a time: a new question abandons the old answer outright.
+      abortRef.current?.abort();
+      queueRef.current?.cancel();
+      avatar.current?.stop();
+
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      const history = [
+        ...turns,
+        { role: "user" as const, content: text },
+      ].slice(-MAX_MESSAGES);
+      setTurns(history);
+      setSubtitles("");
+      setError(null);
+      setSuggestion(null);
+      setFirstAudioMs(null);
+      setState("thinking");
+      turnStartRef.current = performance.now();
+
+      let spoken = "";
+      let crisis = false;
+
+      const queue = new SpeechQueue({
+        speak: async (sentence, index) => {
+          if (controller.signal.aborted) return;
+          await avatar.current?.speak(sentence, {
+            mute: muted,
+            signal: controller.signal,
+            onWord: (word) => setSubtitles((prev) => (prev + word).slice(-400)),
+          });
+          if (controller.signal.aborted) return;
+          if (index === 0) {
+            setFirstAudioMs(
+              Math.round(performance.now() - turnStartRef.current),
+            );
+            setState((current) =>
+              current === "thinking" ? "speaking" : current,
+            );
+          }
+        },
+        onError: (err) => setError(err.message),
+        onIdle: () => {
+          // `speak` resolves at enqueue time, so the avatar is still talking here. The marker rides
+          // the tail of TalkingHead's own queue and fires when the last word has actually played.
+          avatar.current?.marker(() => {
+            if (controller.signal.aborted) return;
+            setState((current) => (current === "crisis" ? current : "ready"));
+          });
+        },
+      });
+      queueRef.current = queue;
+
+      const onEvent = (event: ChatEvent) => {
+        switch (event.type) {
+          case "risk":
+            setRisk(event.tier);
+            if (isCrisis(event.tier)) {
+              crisis = true;
+              setState("crisis");
+            }
+            break;
+          case "mood":
+            avatar.current?.setMood(event.value);
+            break;
+          case "suggest":
+            setSuggestion(event.action);
+            break;
+          case "sentence":
+            spoken = spoken ? `${spoken} ${event.text}` : event.text;
+            queue.push(event.text);
+            break;
+          case "error":
+            setError(event.message);
+            break;
+          case "done":
+            queue.end();
+            break;
+        }
+      };
+
+      try {
+        await streamChat(
+          { messages: history },
+          { onEvent, signal: controller.signal },
+        );
+      } catch (err) {
+        if (!controller.signal.aborted) {
+          setError((err as Error).message);
+          setState("ready");
+        }
+        queue.end();
+        return;
+      }
+
+      if (controller.signal.aborted) return;
+      if (spoken) {
+        setTurns((prev) =>
+          [...prev, { role: "assistant" as const, content: spoken }].slice(
+            -MAX_MESSAGES,
+          ),
+        );
+      }
+      if (!crisis && !spoken) setState("ready");
+    },
+    [state, turns, muted],
+  );
+
+  useEffect(() => {
+    sendRef.current = send;
+  }, [send]);
+
+  /** One VAD segment: audio → transcript → turn. Silence quietly returns to listening. */
+  const onSpeechEnd = useCallback(async (audio: Float32Array) => {
+    setSpeechLevel(0);
+    setState((current) => (current === "ready" ? "transcribing" : current));
+    try {
+      const text = await transcribe(audio);
+      if (!text) {
+        setState((current) => (current === "transcribing" ? "ready" : current));
+        return;
+      }
+      await sendRef.current(text);
+    } catch (err) {
+      setError((err as Error).message);
+      setState((current) => (current === "transcribing" ? "ready" : current));
+    }
   }, []);
 
-  const send = useCallback(async () => {
-    const text = draft.trim();
-    if (!text || state === "idle" || state === "crisis") return;
-
-    // One in-flight turn at a time: a new question abandons the old answer outright.
-    abortRef.current?.abort();
-    queueRef.current?.cancel();
-    avatar.current?.stop();
-
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    const history = [...turns, { role: "user" as const, content: text }].slice(-MAX_MESSAGES);
-    setTurns(history);
-    setDraft("");
-    setSubtitles("");
-    setError(null);
-    setSuggestion(null);
-    setFirstAudioMs(null);
-    setState("thinking");
-    turnStartRef.current = performance.now();
-
-    let spoken = "";
-    let crisis = false;
-
-    const queue = new SpeechQueue({
-      speak: async (sentence, index) => {
-        if (controller.signal.aborted) return;
-        await avatar.current?.speak(sentence, {
-          mute: muted,
-          signal: controller.signal,
-          onWord: (word) => setSubtitles((prev) => (prev + word).slice(-400)),
-        });
-        if (controller.signal.aborted) return;
-        if (index === 0) {
-          setFirstAudioMs(Math.round(performance.now() - turnStartRef.current));
-          setState((current) => (current === "thinking" ? "speaking" : current));
-        }
-      },
-      onError: (err) => setError(err.message),
-      onIdle: () => {
-        // `speak` resolves at enqueue time, so the avatar is still talking here. The marker rides
-        // the tail of TalkingHead's own queue and fires when the last word has actually played.
-        avatar.current?.marker(() => {
-          if (controller.signal.aborted) return;
-          setState((current) => (current === "crisis" ? current : "ready"));
-        });
-      },
-    });
-    queueRef.current = queue;
-
-    const onEvent = (event: ChatEvent) => {
-      switch (event.type) {
-        case "risk":
-          setRisk(event.tier);
-          if (isCrisis(event.tier)) {
-            crisis = true;
-            setState("crisis");
-          }
-          break;
-        case "mood":
-          avatar.current?.setMood(event.value);
-          break;
-        case "suggest":
-          setSuggestion(event.action);
-          break;
-        case "sentence":
-          spoken = spoken ? `${spoken} ${event.text}` : event.text;
-          queue.push(event.text);
-          break;
-        case "error":
-          setError(event.message);
-          break;
-        case "done":
-          queue.end();
-          break;
-      }
-    };
-
-    try {
-      await streamChat({ messages: history }, { onEvent, signal: controller.signal });
-    } catch (err) {
-      if (!controller.signal.aborted) {
-        setError((err as Error).message);
-        setState("ready");
-      }
-      queue.end();
+  const enableVoice = useCallback(async () => {
+    if (vadRef.current) {
+      setVoice(true);
       return;
     }
-
-    if (controller.signal.aborted) return;
-    if (spoken) {
-      setTurns((prev) =>
-        [...prev, { role: "assistant" as const, content: spoken }].slice(-MAX_MESSAGES),
-      );
+    setMicBusy(true);
+    try {
+      const { createVad } = await import("@/lib/voice/vad");
+      vadRef.current = await createVad({
+        onSpeechEnd: (audio) => void onSpeechEnd(audio),
+        onFrame: (probability) => setSpeechLevel(probability),
+        onMisfire: () => setSpeechLevel(0),
+      });
+      setVoice(true);
+    } catch (err) {
+      setError((err as Error).message);
+      setVoice(false);
+    } finally {
+      setMicBusy(false);
     }
-    if (!crisis && !spoken) setState("ready");
-  }, [draft, state, turns, muted]);
+  }, [onSpeechEnd]);
+
+  const disableVoice = useCallback(() => {
+    setVoice(false);
+    setSpeechLevel(0);
+    void vadRef.current?.pause();
+  }, []);
+
+  // The mic is open only while nothing else is: never while Cura is talking (even with echo
+  // cancellation on, her own voice is the loudest thing in the room) and never mid-transcription.
+  useEffect(() => {
+    const vad = vadRef.current;
+    if (!vad) return;
+    if (voice && state === "ready") void vad.start();
+    else void vad.pause();
+  }, [voice, state]);
+
+  useEffect(() => () => void vadRef.current?.destroy(), []);
+
+  const start = useCallback(async () => {
+    // The only place AudioContext.resume() may run is inside a user gesture — and the same click
+    // is the one that may raise the mic prompt, so the whole loop is armed from here.
+    await avatar.current?.resumeAudio();
+    setState("ready");
+    await enableVoice();
+  }, [enableVoice]);
 
   const stop = useCallback(() => {
     abortRef.current?.abort();
@@ -179,6 +275,8 @@ export default function SessionClient() {
   }, []);
 
   const busy = state === "thinking" || state === "speaking";
+  const listening = voice && state === "ready";
+  const statusLabel = listening ? "listening" : state;
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col bg-[#12161c] text-zinc-100 lg:flex-row">
@@ -202,6 +300,39 @@ export default function SessionClient() {
           </div>
         )}
 
+        {state !== "idle" && (
+          <div className="absolute left-1/2 top-6 flex -translate-x-1/2 flex-col items-center gap-2">
+            <button
+              onClick={voice ? disableVoice : () => void enableVoice()}
+              disabled={micBusy}
+              title={voice ? "Mute microphone" : "Talk to Cura"}
+              className={`relative flex h-14 w-14 items-center justify-center rounded-full border transition-colors ${
+                listening
+                  ? "border-emerald-400 bg-emerald-500/20 text-emerald-200"
+                  : voice
+                    ? "border-zinc-600 bg-black/40 text-zinc-400"
+                    : "border-zinc-700 bg-black/50 text-zinc-500"
+              }`}
+            >
+              {/* Ring scales with live speech probability — the "it hears me" feedback. */}
+              {listening && (
+                <span
+                  className="absolute inset-0 rounded-full border border-emerald-400/60"
+                  style={{
+                    transform: `scale(${1 + speechLevel * 0.5})`,
+                    opacity: 0.15 + speechLevel * 0.6,
+                    transition: "transform 80ms linear, opacity 80ms linear",
+                  }}
+                />
+              )}
+              {voice ? <Mic size={20} /> : <MicOff size={20} />}
+            </button>
+            <span className="rounded-full bg-black/50 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-zinc-300 backdrop-blur">
+              {micBusy ? "starting mic…" : statusLabel}
+            </span>
+          </div>
+        )}
+
         {subtitles && (
           <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center p-6">
             <p className="max-w-2xl rounded-lg bg-black/60 px-4 py-2 text-center text-base leading-relaxed backdrop-blur">
@@ -213,23 +344,34 @@ export default function SessionClient() {
 
       <aside className="flex w-full shrink-0 flex-col gap-3 border-t border-zinc-800 bg-[#0d1117] p-5 lg:w-[380px] lg:border-l lg:border-t-0">
         <header className="flex items-baseline justify-between">
-          <h1 className="text-sm font-semibold tracking-wide">Cura — session</h1>
-          <span className="font-mono text-[11px] text-zinc-500">{state}</span>
+          <h1 className="text-sm font-semibold tracking-wide">
+            Cura — session
+          </h1>
+          <span className="font-mono text-[11px] text-zinc-500">
+            {statusLabel}
+          </span>
         </header>
 
         {state === "crisis" && (
           <div className="rounded-md border border-red-800 bg-red-950/50 p-3 text-sm">
-            <p className="font-semibold text-red-200">Please talk to someone who can help.</p>
+            <p className="font-semibold text-red-200">
+              Please talk to someone who can help.
+            </p>
             <ul className="mt-2 space-y-1">
               {HELPLINES.map((line) => (
-                <li key={line.name} className="flex items-baseline justify-between gap-2">
+                <li
+                  key={line.name}
+                  className="flex items-baseline justify-between gap-2"
+                >
                   <a
                     href={`tel:${line.number.replace(/[^+\d]/g, "")}`}
                     className="font-medium text-red-100 underline underline-offset-2"
                   >
                     {line.name} {line.number}
                   </a>
-                  <span className="shrink-0 text-[11px] text-red-300/70">{line.detail}</span>
+                  <span className="shrink-0 text-[11px] text-red-300/70">
+                    {line.detail}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -245,8 +387,9 @@ export default function SessionClient() {
         <div className="min-h-0 flex-1 space-y-2 overflow-y-auto text-sm">
           {turns.length === 0 && (
             <p className="text-zinc-500">
-              Type something below. The reply is spoken sentence by sentence as it streams, so the
-              avatar starts talking before the model has finished thinking.
+              {voice
+                ? "Just talk — Cura answers when you stop. The reply is spoken sentence by sentence as it streams, so she starts before the model has finished thinking."
+                : "Type something below, or turn the mic on to talk instead."}
             </p>
           )}
           {turns.map((turn, i) => (
@@ -271,26 +414,40 @@ export default function SessionClient() {
 
         <div className="flex flex-wrap gap-x-3 gap-y-1 font-mono text-[11px] text-zinc-500">
           {firstAudioMs !== null && (
-            <span className={firstAudioMs <= 2500 ? "text-emerald-400" : "text-amber-400"}>
+            <span
+              className={
+                firstAudioMs <= 2500 ? "text-emerald-400" : "text-amber-400"
+              }
+            >
               first audio {firstAudioMs}ms
             </span>
           )}
-          {risk !== "none" && <span className="text-amber-400">risk {risk}</span>}
+          {risk !== "none" && (
+            <span className="text-amber-400">risk {risk}</span>
+          )}
           {suggestion && <span>suggest {suggestion}</span>}
-          {muted && <span className="text-amber-400">muted preview (no TTS key)</span>}
+          {muted && (
+            <span className="text-amber-400">muted preview (no TTS key)</span>
+          )}
         </div>
 
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            void send();
+            const text = draft;
+            setDraft("");
+            void send(text);
           }}
           className="flex gap-2"
         >
           <input
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            placeholder={state === "idle" ? "Start the session first" : "How are you feeling?"}
+            placeholder={
+              state === "idle"
+                ? "Start the session first"
+                : "How are you feeling?"
+            }
             disabled={state === "idle" || state === "crisis"}
             className="min-w-0 flex-1 rounded-md border border-zinc-700 bg-[#161b22] px-3 py-2 text-sm outline-none focus:border-emerald-600 disabled:text-zinc-500"
           />
@@ -314,8 +471,8 @@ export default function SessionClient() {
         </form>
 
         <p className="text-[11px] leading-relaxed text-zinc-500">
-          Cura is an AI companion, not a therapist or emergency service. Nothing you type is stored
-          on our servers.
+          Cura is an AI companion, not a therapist or emergency service. Nothing
+          you type is stored on our servers.
         </p>
       </aside>
     </div>
