@@ -3,6 +3,7 @@ import {
   createUIMessageStream,
   createUIMessageStreamResponse,
   streamText,
+  toUIMessageStream,
   type UIMessage,
 } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
@@ -91,10 +92,12 @@ export async function POST(req: Request) {
 ${THERAPIST_SCOPE_INSTRUCTIONS}
 ${HUMAN_RESPONSE_INSTRUCTIONS}
 Use supportive, plain language; ask one gentle question at a time when helpful; suggest evidence-informed practices like breathing, journaling, grounding, reframing, and reaching out to trusted people. If the user mentions self-harm, suicide, abuse, immediate danger, or a medical emergency, encourage contacting local emergency services or a crisis hotline right away and staying with a trusted person.`,
-    messages: convertToModelMessages(messages),
+    messages: await convertToModelMessages(messages),
   });
 
-  return result.toUIMessageStreamResponse();
+  return createUIMessageStreamResponse({
+    stream: toUIMessageStream({ stream: result.stream }),
+  });
 }
 
 function fixedTextResponse(messages: UIMessage[], texts: string[]): Response {
