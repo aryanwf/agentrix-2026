@@ -16,9 +16,9 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-## OpenRouter Chat
+## OpenRouter API
 
-The `/chat` route uses the Vercel AI SDK with OpenRouter. Configure the server with:
+The `/api/chat/simple` route uses the Vercel AI SDK with OpenRouter. Configure the server with:
 
 ```bash
 OPENROUTER_API_KEY=your_openrouter_key

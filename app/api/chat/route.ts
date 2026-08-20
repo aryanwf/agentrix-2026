@@ -5,7 +5,13 @@ import {
   type ChatRequest,
 } from "@/lib/chat/types";
 import { OpenRouterError, streamChat, type ChatMessage, type StreamSink } from "@/lib/openrouter";
-import { COMPANION_SYSTEM_PROMPT, SignalExtractor, sanitizeForSpeech } from "@/lib/prompts";
+import {
+  COMPANION_SYSTEM_PROMPT,
+  isClearlyOffTopic,
+  OFF_TOPIC_REPLY,
+  SignalExtractor,
+  sanitizeForSpeech,
+} from "@/lib/prompts";
 import { CRISIS_SCRIPT, FALLBACK_REPLY } from "@/lib/resources";
 import { LEXICON_IMPLEMENTED, classifyLexicon } from "@/lib/safety/lexicon";
 import { isCrisis, type RiskTier } from "@/lib/safety/types";
@@ -97,6 +103,12 @@ async function run({ messages, userText, signal, send }: RunContext): Promise<vo
   if (isCrisis(tier)) {
     send({ type: "mood", value: "neutral" });
     CRISIS_SCRIPT.forEach((text, index) => send({ type: "sentence", index, text }));
+    send({ type: "done" });
+    return;
+  }
+
+  if (isClearlyOffTopic(userText)) {
+    send({ type: "sentence", index: 0, text: OFF_TOPIC_REPLY });
     send({ type: "done" });
     return;
   }

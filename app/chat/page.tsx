@@ -159,6 +159,7 @@ export default function ChatPage() {
                       <div
                         className={cn(
                           "max-w-[85%] rounded-2xl px-4 py-2.5 text-base leading-7",
+                          "whitespace-pre-wrap",
                           isUser
                             ? "bg-accent text-foreground"
                             : "bg-transparent text-foreground/90",

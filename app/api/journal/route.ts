@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 
 type JournalPayload = {
   deviceId?: string;
@@ -10,7 +10,8 @@ type JournalPayload = {
 };
 
 export async function GET(request: NextRequest) {
-  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  const supabase = getSupabase();
+  if (!supabase) {
     return NextResponse.json({ error: "Supabase environment variables are missing." }, { status: 500 });
   }
 
@@ -35,7 +36,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  const supabase = getSupabase();
+  if (!supabase) {
     return NextResponse.json({ error: "Supabase environment variables are missing." }, { status: 500 });
   }
 
