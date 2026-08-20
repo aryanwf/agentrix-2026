@@ -174,46 +174,44 @@ export default function ChatPage() {
 
         <div className="shrink-0 px-3 pb-4 md:px-6">
           <form className="mx-auto max-w-2xl" onSubmit={submit}>
-            <div className="rounded-[28px] border border-input bg-background p-2 shadow-[0_12px_40px_rgba(0,0,0,0.08)] focus-within:border-ring">
+            <div className="flex items-end gap-2">
               <Textarea
                 aria-label="Message CURA"
-                className="min-h-10 max-h-32 px-3 py-2.5"
+                className="min-h-12 max-h-32 flex-1 rounded-[28px] bg-white px-4 py-3.5 shadow-[0_12px_40px_rgba(0,0,0,0.08)]"
                 onChange={(event) => setInput(event.target.value)}
                 onKeyDown={onKeyDown}
                 placeholder="Message CURA"
                 rows={1}
                 value={input}
               />
-              <div className="flex items-center justify-between px-2 pb-0.5">
-                <p className="text-[10px] text-muted-foreground">
-                  CURA offers support and coping skills, not professional care.
-                </p>
-                {isStreaming ? (
-                  <Button
-                    aria-label="Stop"
-                    className="h-9 w-9 rounded-full"
-                    onClick={stop}
-                    size="icon"
-                    type="button"
-                    variant="secondary"
-                  >
-                    <Square className="h-4 w-4" />
-                  </Button>
-                ) : (
-                  <Button
-                    aria-label="Send"
-                    className={cn(
-                      "h-9 w-9 rounded-full transition-opacity",
-                      !input.trim() && "pointer-events-none opacity-0",
-                    )}
-                    size="icon"
-                    type="submit"
-                  >
-                    <ArrowUp className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
+              {isStreaming ? (
+                <Button
+                  aria-label="Stop"
+                  className="h-12 w-12 shrink-0 rounded-full"
+                  onClick={stop}
+                  size="icon"
+                  type="button"
+                  variant="secondary"
+                >
+                  <Square className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button
+                  aria-label="Send"
+                  className={cn(
+                    "h-12 w-12 shrink-0 rounded-full transition-opacity",
+                    !input.trim() && "pointer-events-none opacity-0",
+                  )}
+                  size="icon"
+                  type="submit"
+                >
+                  <ArrowUp className="h-4 w-4" />
+                </Button>
+              )}
             </div>
+            <p className="mt-2 text-center text-[10px] text-muted-foreground">
+              CURA offers support and coping skills, not professional care.
+            </p>
           </form>
         </div>
       </main>
