@@ -39,8 +39,8 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex h-dvh bg-background text-foreground">
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-white md:flex">
+    <div className="flex h-dvh bg-zinc-50 text-black dark:bg-black dark:text-zinc-50">
+      <aside className="hidden w-64 shrink-0 flex-col border-r border-black/[.08] bg-white dark:border-white/[.145] dark:bg-black md:flex">
         <div className="p-3">
           <Button
             className="h-10 w-full justify-start gap-2 rounded-lg text-sm"
@@ -54,13 +54,13 @@ export default function ChatPage() {
         </div>
 
         <ScrollArea className="min-h-0 flex-1 px-2">
-          <p className="px-2 pb-1.5 text-[11px] font-medium text-muted-foreground">
+          <p className="px-2 pb-1.5 text-[11px] font-medium text-zinc-600 dark:text-zinc-400">
             History
           </p>
           <div className="space-y-0.5">
             {history.map((item) => (
               <button
-                className="w-full truncate rounded-md px-2 py-1.5 text-left text-[13px] text-foreground/80 hover:bg-accent"
+                className="w-full truncate rounded-md px-2 py-1.5 text-left text-[13px] text-zinc-800 hover:bg-black/[.04] dark:text-zinc-300 dark:hover:bg-white/[.06]"
                 key={item}
                 type="button"
               >
@@ -70,14 +70,14 @@ export default function ChatPage() {
           </div>
         </ScrollArea>
 
-        <div className="border-t border-border p-2">
-          <div className="flex items-center gap-2 rounded-md bg-secondary px-2 py-1.5">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+        <div className="border-t border-black/[.08] p-2 dark:border-white/[.145]">
+          <div className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-black/[.04] dark:hover:bg-white/[.06]">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-foreground text-xs font-semibold text-background">
               C
             </div>
             <div className="min-w-0">
               <p className="truncate text-[13px] font-medium">CURA</p>
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-[10px] text-zinc-600 dark:text-zinc-400">
                 Therapist companion
               </p>
             </div>
@@ -86,14 +86,14 @@ export default function ChatPage() {
       </aside>
 
       <main className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-12 shrink-0 items-center justify-between border-b border-border px-4 md:px-6">
+        <header className="flex h-12 shrink-0 items-center justify-between border-b border-black/[.08] bg-zinc-50/90 px-4 backdrop-blur dark:border-white/[.145] dark:bg-black/90 md:px-6">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-xs font-bold text-primary-foreground">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-foreground text-xs font-bold text-background">
               C
             </div>
             <div>
               <h1 className="text-sm font-semibold leading-none">CURA</h1>
-              <p className="mt-0.5 text-[11px] text-muted-foreground">
+              <p className="mt-0.5 text-[11px] text-zinc-600 dark:text-zinc-400">
                 Your AI therapist
               </p>
             </div>
@@ -109,11 +109,11 @@ export default function ChatPage() {
             >
               <SquarePen className="h-4 w-4" />
             </Button>
-            <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <span className="flex items-center gap-1.5 text-[11px] text-zinc-600 dark:text-zinc-400">
               <span
                 className={cn(
                   "h-1.5 w-1.5 rounded-full",
-                  isStreaming ? "bg-primary animate-pulse" : "bg-primary/40",
+                  isStreaming ? "bg-foreground animate-pulse" : "bg-zinc-400",
                 )}
               />
               {isStreaming ? "Responding" : "Ready"}
@@ -125,13 +125,13 @@ export default function ChatPage() {
           <div className="mx-auto flex min-h-full w-full max-w-2xl flex-col px-4 py-6 md:px-6">
             {!hasMessages ? (
               <div className="flex flex-1 flex-col items-center justify-start gap-2 pt-8 text-center">
-                <div className="mb-1 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-lg font-bold text-primary-foreground">
+                <div className="mb-1 flex h-12 w-12 items-center justify-center rounded-2xl bg-foreground text-lg font-bold text-background">
                   C
                 </div>
                 <h2 className="text-2xl font-semibold tracking-tight">
                   How are you feeling today?
                 </h2>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-zinc-600 dark:text-zinc-400">
                   Share what&rsquo;s on your mind. CURA will listen and help you
                   take a small step.
                 </p>
@@ -146,14 +146,14 @@ export default function ChatPage() {
                       key={message.id}
                     >
                       {!isUser ? (
-                        <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary text-[10px] font-semibold text-primary-foreground">
+                        <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-foreground text-[10px] font-semibold text-background">
                           C
                         </div>
                       ) : null}
                       <div
                         className={cn(
                           "max-w-[85%] text-sm leading-6",
-                          isUser ? "text-foreground" : "text-foreground/90",
+                          isUser ? "text-black dark:text-zinc-50" : "text-zinc-900 dark:text-zinc-100",
                         )}
                       >
                         {messageText(message)}
@@ -177,7 +177,7 @@ export default function ChatPage() {
             <div className="flex items-end gap-2">
               <Textarea
                 aria-label="Message CURA"
-                className="min-h-12 max-h-32 flex-1 rounded-[28px] bg-white px-4 py-3.5 shadow-[0_12px_40px_rgba(0,0,0,0.08)]"
+                className="min-h-12 max-h-32 flex-1 rounded-[28px] bg-white px-4 py-3.5 shadow-[0_12px_40px_rgba(0,0,0,0.08)] dark:bg-black"
                 onChange={(event) => setInput(event.target.value)}
                 onKeyDown={onKeyDown}
                 placeholder="Message CURA"
@@ -209,7 +209,7 @@ export default function ChatPage() {
                 </Button>
               )}
             </div>
-            <p className="mt-2 text-center text-[10px] text-muted-foreground">
+            <p className="mt-2 text-center text-[10px] text-zinc-600 dark:text-zinc-400">
               CURA offers support and coping skills, not professional care.
             </p>
           </form>
