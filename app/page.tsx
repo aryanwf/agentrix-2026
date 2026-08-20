@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 
 type AppName = "chat" | "talk" | "journal";
 
@@ -36,18 +35,19 @@ function AppIcon({ type }: { type: AppName }) {
 
 export default function Home() {
   const router = useRouter();
-  const [activeApp, setActiveApp] = useState<AppName>("chat");
-  const [journalEntry, setJournalEntry] = useState("");
-  const [entrySaved, setEntrySaved] = useState(false);
+  const activeApp: AppName = "chat";
   const active = apps[activeApp];
 
   function selectApp(appName: AppName) {
-    if (appName === "journal") {
-      router.push("/journal");
+    if (appName === "chat") {
+      router.push("/chat");
       return;
     }
-    setActiveApp(appName);
-    setEntrySaved(false);
+    if (appName === "talk") {
+      router.push("/session");
+      return;
+    }
+    router.push("/journal");
   }
 
   return (
@@ -67,23 +67,11 @@ export default function Home() {
         <div className="companion-card" id="about">
           <div className="card-topline"><span><Logo /> Cura</span><span className="private-pill"><i /> private space</span></div>
           <div className="card-content" key={activeApp}>
-            {activeApp === "journal" ? (
-              <div className="journal-workspace">
-                <div className="card-kicker">A page for today</div>
-                <h2>Write it<br /><em>down.</em></h2>
-                <p className="journal-prompt">{active.prompt}</p>
-                <textarea aria-label="Journal entry" value={journalEntry} onChange={(event) => { setJournalEntry(event.target.value); setEntrySaved(false); }} placeholder="Start wherever feels easy..." />
-                <button className="begin-button" type="button" onClick={() => setEntrySaved(true)}>{entrySaved ? "Entry saved" : "Save entry"} <span>{entrySaved ? "✓" : "↗"}</span></button>
-              </div>
-            ) : (
-              <>
-                <div className="card-kicker">{active.label} with Cura</div>
-                <h2>{active.title}</h2>
-                <p>{active.text}</p>
-                <div className="prompt-box"><span>{active.prompt}</span><b>↗</b></div>
-                <button className="begin-button" type="button">Begin with {active.label.toLowerCase()} <span>↗</span></button>
-              </>
-            )}
+            <div className="card-kicker">{active.label} with Cura</div>
+            <h2>{active.title}</h2>
+            <p>{active.text}</p>
+            <div className="prompt-box"><span>{active.prompt}</span><b>↗</b></div>
+            <button className="begin-button" type="button" onClick={() => selectApp(activeApp)}>Begin with {active.label.toLowerCase()} <span>↗</span></button>
           </div>
           <div className="card-footer"><span>Small steps count.</span><span className="card-mark">✦</span></div>
         </div>
