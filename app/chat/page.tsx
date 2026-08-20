@@ -3,12 +3,17 @@
 import { type FormEvent, type KeyboardEvent, useState } from "react";
 import { ArrowUp, Square, SquarePen } from "lucide-react";
 import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 const history = ["Sleep worries", "Grounding practice", "Anxiety check-in"];
+
+// `/api/chat` is the session avatar's SSE endpoint; this page talks to the plain
+// AI SDK stream instead.
+const transport = new DefaultChatTransport({ api: "/api/chat/simple" });
 
 function messageText(message: ReturnType<typeof useChat>["messages"][number]) {
   return message.parts
@@ -19,7 +24,7 @@ function messageText(message: ReturnType<typeof useChat>["messages"][number]) {
 
 export default function ChatPage() {
   const [input, setInput] = useState("");
-  const { messages, sendMessage, status, stop, error } = useChat();
+  const { messages, sendMessage, status, stop, error } = useChat({ transport });
   const isStreaming = status === "submitted" || status === "streaming";
   const hasMessages = messages.length > 0;
 

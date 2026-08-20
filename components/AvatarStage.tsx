@@ -22,6 +22,11 @@ export type AvatarHandle = {
     },
   ) => Promise<SpeakResult | null>;
   stop: () => void;
+  /**
+   * Fires once every utterance queued before it has finished *playing*. `speak` resolves at
+   * enqueue time, so this is the only way to know the avatar has actually stopped talking.
+   */
+  marker: (onReached: () => void) => void;
   setMood: (mood: Mood) => void;
   gesture: (name: string, duration?: number) => void;
   /** Must be called from a user gesture before the first speak (autoplay policy). */
@@ -138,6 +143,11 @@ export default function AvatarStage({ ref, onReady, onError, className }: Props)
         };
       },
       stop: () => headRef.current?.stopSpeaking(),
+      marker: (onReached) => {
+        const head = headRef.current;
+        if (head) head.speakMarker(onReached);
+        else onReached();
+      },
       setMood: (mood) => headRef.current?.setMood(mood),
       gesture: (name, duration = 2) => headRef.current?.playGesture(name, duration),
     }),
