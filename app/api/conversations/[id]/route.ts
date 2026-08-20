@@ -39,3 +39,19 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "You must be signed in." }, { status: 401 });
   }
 }
+
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  try {
+    const auth = await createAuthClient();
+    const { data: authData } = await auth.auth.getUser();
+    const supabase = getSupabase();
+    if (!authData.user || !supabase) return NextResponse.json({ error: "You must be signed in." }, { status: 401 });
+
+    const { error } = await supabase.from("conversations").delete().eq("id", id).eq("user_id", authData.user.id);
+    if (error) return NextResponse.json({ error: error.message }, { status: 404 });
+    return NextResponse.json({ deleted: true });
+  } catch {
+    return NextResponse.json({ error: "You must be signed in." }, { status: 401 });
+  }
+}

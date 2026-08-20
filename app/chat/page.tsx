@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Menu, MessageSquare, Plus, X } from "lucide-react";
+import { ArrowLeft, Menu, MessageSquare, Plus, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AssistantRuntimeProvider } from "@assistant-ui/react";
 import { useChatRuntime, AssistantChatTransport } from "@assistant-ui/react-ai-sdk";
@@ -18,6 +18,8 @@ export default function ChatPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [historyError, setHistoryError] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   async function ensureConversation() {
     if (conversationId.current) return conversationId.current;
@@ -37,6 +39,8 @@ export default function ChatPage() {
   }
 
   const runtime = useChatRuntime({
+    // The transport invokes this callback later, when a message is sent.
+    // eslint-disable-next-line react-hooks/refs
     transport: useMemo(() => new AssistantChatTransport({
       api: "/api/chat/simple",
       prepareSendMessagesRequest: async ({ messages, ...options }) => ({
@@ -53,14 +57,10 @@ export default function ChatPage() {
       const result = (await response.json()) as { conversations?: { id: string; title: string; updated_at: string; messages?: unknown[] }[] };
       const items = result.conversations ?? [];
       setConversations(items.map((conversation) => ({ id: conversation.id, title: conversation.title, updated_at: conversation.updated_at })));
-      const firstWithMessages = items.find((conversation) => getStoredMessageCount(conversation.messages) > 0);
-      if (firstWithMessages) await openConversation(firstWithMessages.id);
-      else if (items[0]) await openConversation(items[0].id);
-      else conversationId.current = null;
+      // Opening Chat always starts a fresh thread. Saved chats are opened explicitly from history.
+      conversationId.current = null;
     }
     void loadConversations();
-  // The runtime is stable for the lifetime of this page.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function openConversation(id: string) {
@@ -89,6 +89,27 @@ export default function ChatPage() {
     conversationId.current = null;
     setActiveId(null);
     runtime.thread.reset();
+  }
+
+  async function deleteConversation() {
+    if (!deleteTarget) return;
+    const id = deleteTarget.id;
+    setDeletingId(id);
+    setHistoryError("");
+    try {
+      const response = await fetch(`/api/conversations/${encodeURIComponent(id)}`, { method: "DELETE" });
+      if (!response.ok) {
+        const result = (await response.json().catch(() => ({}))) as { error?: string };
+        throw new Error(result.error || "Could not delete this chat.");
+      }
+      setConversations((items) => items.filter((conversation) => conversation.id !== id));
+      if (conversationId.current === id) await newConversation();
+      setDeleteTarget(null);
+    } catch (cause) {
+      setHistoryError(cause instanceof Error ? cause.message : "Could not delete this chat.");
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   useEffect(() => {
@@ -140,20 +161,15 @@ export default function ChatPage() {
         </header>
 
         <div className="relative z-10 flex min-h-0 flex-1">
-          {sidebarOpen && <aside className="chat-sidebar"><div className="chat-sidebar-heading"><span>Past chats</span><button type="button" onClick={newConversation} aria-label="New chat"><Plus className="h-4 w-4" /></button></div>{historyError && <p className="chat-history-error" role="alert">{historyError}</p>}<div className="chat-history-list">{conversations.map((conversation) => <button type="button" disabled={loadingId !== null} className={`chat-history-item ${conversation.id === activeId ? "active" : ""}`} key={conversation.id} onClick={() => void openConversation(conversation.id)}><MessageSquare className="h-4 w-4" /><span>{loadingId === conversation.id ? "Loading..." : conversation.title}</span></button>)}</div>{conversations.length === 0 && <p className="chat-history-empty">Your saved chats will appear here.</p>}</aside>}
+           {sidebarOpen && <aside className="chat-sidebar"><div className="chat-sidebar-heading"><span>Past chats</span><button type="button" onClick={() => void newConversation()} aria-label="New chat"><Plus className="h-4 w-4" /></button></div>{historyError && <p className="chat-history-error" role="alert">{historyError}</p>}<div className="chat-history-list">{conversations.map((conversation) => <div className={`chat-history-item ${conversation.id === activeId ? "active" : ""}`} key={conversation.id}><button type="button" disabled={loadingId !== null || deletingId !== null} className="chat-history-open" onClick={() => void openConversation(conversation.id)}><MessageSquare className="h-4 w-4" /><span>{loadingId === conversation.id ? "Loading..." : conversation.title}</span></button><button type="button" className="chat-history-delete" disabled={loadingId !== null || deletingId !== null} onClick={() => setDeleteTarget(conversation)} aria-label={`Delete ${conversation.title}`}><Trash2 className="h-4 w-4" /></button></div>)}</div>{conversations.length === 0 && <p className="chat-history-empty">Your saved chats will appear here.</p>}</aside>}
           <main className="relative min-h-0 min-w-0 flex-1">
           <Thread />
           </main>
-        </div>
-      </div>
+         </div>
+         {deleteTarget && <div className="chat-dialog-backdrop" role="presentation" onClick={() => setDeleteTarget(null)}><div className="chat-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-chat-title" onClick={(event) => event.stopPropagation()}><span className="chat-dialog-label">Past chat</span><h2 id="delete-chat-title">Delete this chat?</h2><p>This conversation will be removed from your chat history.</p><div className="chat-dialog-actions"><button type="button" onClick={() => setDeleteTarget(null)} disabled={!!deletingId}>Keep chat</button><button className="chat-dialog-confirm" type="button" onClick={() => void deleteConversation()} disabled={!!deletingId}>{deletingId ? "Deleting..." : "Delete chat"}</button></div></div></div>}
+       </div>
     </AssistantRuntimeProvider>
   );
-}
-
-function getStoredMessageCount(value: unknown): number {
-  if (Array.isArray(value)) return value.length;
-  if (value && typeof value === "object" && "messages" in value && Array.isArray(value.messages)) return value.messages.length;
-  return 0;
 }
 
 function getMessageId(value: unknown): string | null {
