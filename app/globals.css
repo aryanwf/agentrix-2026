@@ -130,9 +130,16 @@ a { color: inherit; } button { cursor: pointer; font: inherit; }
 .chat-backdrop {
   background: linear-gradient(
     115deg,
-    rgba(232, 228, 240, 0.4) 0%,
-    rgba(232, 228, 240, 0.75) 100%
+    var(--white) 0%,
+    var(--white) 42%,
+    #f2eff6 42%,
+    #f2eff6 100%
   );
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
 }
 
 .chat-backdrop:before,
@@ -145,21 +152,57 @@ a { color: inherit; } button { cursor: pointer; font: inherit; }
 .chat-backdrop:before {
   background: #f5c8bb;
   filter: blur(70px);
-  height: 280px;
-  opacity: 0.4;
+  height: 300px;
+  opacity: 0.5;
   right: 4%;
   top: 4%;
-  width: 280px;
+  width: 300px;
 }
 
 .chat-backdrop:after {
   background: #c9c2dd;
   bottom: 6%;
   filter: blur(80px);
-  height: 220px;
-  left: 6%;
-  opacity: 0.3;
-  width: 220px;
+  height: 240px;
+  left: 5%;
+  opacity: 0.35;
+  width: 240px;
+}
+
+/* Landing-style header for the /chat workspace. */
+.chat-header {
+  background: color-mix(in oklab, var(--white) 82%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+.chat-header .private-pill {
+  background: var(--olive-soft);
+  border: 1px solid var(--line);
+  border-radius: 100px;
+  padding: 5px 11px;
+}
+
+/* Landing-style welcome heading for the /chat workspace. */
+.chat-welcome h1 {
+  color: var(--ink);
+  font-size: clamp(34px, 5.5vw, 58px);
+  font-weight: 400;
+  letter-spacing: -0.08em;
+  line-height: 0.95;
+  max-width: 560px;
+}
+
+.chat-welcome h1 em {
+  color: var(--olive);
+  font-family: Georgia, serif;
+  font-style: italic;
+}
+
+.chat-welcome > p {
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.6;
+  max-width: 340px;
 }
 
 /* Typing / thinking indicator for the chat workspace. */

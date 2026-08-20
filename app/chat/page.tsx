@@ -15,8 +15,9 @@ export default function ChatPage() {
 
   return (
     <AssistantRuntimeProvider runtime={runtime}>
-      <div className="flex h-dvh flex-col bg-background text-foreground">
-        <header className="flex h-12 shrink-0 items-center gap-3 border-b border-border px-4 md:px-6">
+      <div className="relative flex h-dvh flex-col overflow-hidden bg-background text-foreground">
+        <div className="chat-backdrop" aria-hidden="true" />
+        <header className="chat-header relative z-10 flex h-14 shrink-0 items-center gap-3 border-b border-border px-4 md:px-6">
           <Link
             href="/"
             className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
@@ -28,12 +29,15 @@ export default function ChatPage() {
           <span className="logo-mark sm" aria-hidden="true">
             <i /><i /><i />
           </span>
-          <span className="text-sm font-bold leading-none tracking-[-0.07em]">
+          <span className="text-base font-bold leading-none tracking-[-0.07em]">
             cura<span className="brand-dot">.</span>
+          </span>
+          <span className="ml-auto hidden items-center gap-1.5 text-[10px] font-semibold tracking-[0.16em] text-muted-foreground uppercase sm:flex">
+            <span className="private-pill"><i /> private space</span>
           </span>
         </header>
 
-        <main className="min-h-0 flex-1">
+        <main className="relative z-10 min-h-0 flex-1">
           <Thread />
         </main>
       </div>
