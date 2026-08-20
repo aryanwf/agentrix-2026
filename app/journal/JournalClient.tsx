@@ -124,9 +124,9 @@ export default function JournalClient() {
             <div className="page-header"><span>Morning notes</span><span>01</span></div>
             <h2>Before the day gets too loud...</h2>
             <div className="mood-stamps" aria-label="Mood options">
-              {moods.map((moodName) => <button className={mood === moodName ? "selected" : ""} type="button" key={moodName} onClick={() => setMood(moodName)}>{moodName}</button>)}
+              {moods.map((moodName) => <button className={mood === moodName ? "selected" : ""} type="button" key={moodName} onClick={() => { setMood(moodName); setStatus("idle"); }}>{moodName}</button>)}
             </div>
-            <textarea className="lined-note editable-note" aria-label="Morning note" value={morningNote} onChange={(event) => setMorningNote(event.target.value)}/>
+            <textarea className="lined-note editable-note" aria-label="Morning note" value={morningNote} onChange={(event) => { setMorningNote(event.target.value); setStatus("idle"); }}/>
             <div className="tiny-note">A sentence is enough.</div>
           </article>
 
@@ -135,15 +135,15 @@ export default function JournalClient() {
             <div className="page-header"><span>Daily reflection</span><span>02</span></div>
             <p className="prompt-label">Prompt</p>
             <h2>{prompt}</h2>
-            <textarea className="entry-area" aria-label="Journal entry" value={entry} onChange={(event) => setEntry(event.target.value)}/>
+            <textarea className="entry-area" aria-label="Journal entry" value={entry} onChange={(event) => { setEntry(event.target.value); setStatus("idle"); }}/>
             <button className="save-entry" type="button" onClick={saveEntry} disabled={!ready || status === "saving"}>{status === "saved" ? "Saved" : status === "saving" ? "Saving" : "Save this page"} <span>{status === "saved" ? "✓" : "↗"}</span></button>
           </article>
         </div>
 
         <aside className="prompt-stack" aria-label="Journal prompts">
-           {entries.length > 0 && <><p className="side-label">Past pages</p>{entries.map((savedEntry) => <button className="prompt-card" type="button" key={savedEntry.id} onClick={() => openEntry(savedEntry)}><span>{savedEntry.created_at ? new Date(savedEntry.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : ""}</span><p>{savedEntry.entry || "Untitled page"}</p></button>)}</>}
+           {entries.length > 0 && <><p className="side-label journal-history-label">Past pages</p>{entries.map((savedEntry) => <button className="prompt-card journal-history-card" type="button" key={savedEntry.id} onClick={() => openEntry(savedEntry)}><span>{savedEntry.created_at ? new Date(savedEntry.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : ""}</span><p className="journal-history-preview" title={savedEntry.entry || "Untitled page"}>{savedEntry.entry || "Untitled page"}</p></button>)}</>}
            <p className="side-label">Prompt cards</p>
-          {prompts.map((promptText, index) => (<button className={`prompt-card ${prompt === promptText ? "active" : ""}`} type="button" key={promptText} onClick={() => setPrompt(promptText)}><span>{String(index + 1).padStart(2, "0")}</span><p>{promptText}</p></button>))}
+           {prompts.map((promptText, index) => (<button className={`prompt-card ${prompt === promptText ? "active" : ""}`} type="button" key={promptText} onClick={() => { setPrompt(promptText); setStatus("idle"); }}><span>{String(index + 1).padStart(2, "0")}</span><p>{promptText}</p></button>))}
         </aside>
       </section>
     </main>);
