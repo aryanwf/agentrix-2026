@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    return userId ? NextResponse.json({ entries: data ?? [] }) : NextResponse.json({ entry: data?.[0] ?? null });
+    return NextResponse.json({ entries: data ?? [] });
 }
 export async function POST(request: NextRequest) {
     const supabase = getSupabase();
@@ -70,4 +70,33 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
     return NextResponse.json({ entry: data ?? null });
+}
+
+export async function DELETE(request: NextRequest) {
+    const supabase = getSupabase();
+    if (!supabase) {
+        return NextResponse.json({ error: "Supabase environment variables are missing." }, { status: 500 });
+    }
+
+    const id = request.nextUrl.searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "id is required." }, { status: 400 });
+
+    let userId: string | null = null;
+    try {
+        const auth = await createAuthClient();
+        const { data } = await auth.auth.getUser();
+        userId = data.user?.id ?? null;
+    }
+    catch {
+        userId = null;
+    }
+
+    const deviceId = request.nextUrl.searchParams.get("deviceId");
+    if (!userId && !deviceId) return NextResponse.json({ error: "You must be signed in." }, { status: 401 });
+
+    let query = supabase.from("journal_entries").delete().eq("id", id);
+    query = userId ? query.eq("user_id", userId) : query.eq("device_id", deviceId!);
+    const { error } = await query;
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ deleted: true });
 }

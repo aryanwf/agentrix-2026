@@ -56,13 +56,6 @@ export default function JournalClient() {
                     entries?: SavedEntry[];
                 };
                 setEntries(result.entries ?? []);
-                const savedEntry = result.entries?.[0] ?? result.entry;
-                if (savedEntry) {
-                    setMood(savedEntry.mood || "steady");
-                    setMorningNote(savedEntry.morning_note || "");
-                    setPrompt(savedEntry.prompt || prompts[2]);
-                    setEntry(savedEntry.entry || "");
-                }
                 setReady(true);
                 setStatus("idle");
             }
@@ -103,6 +96,11 @@ export default function JournalClient() {
         setPrompt(savedEntry.prompt || prompts[2]);
         setEntry(savedEntry.entry || "");
         setStatus("idle");
+    }
+    async function deleteEntry(id: string) {
+        if (!window.confirm("Delete this journal page?")) return;
+        const response = await fetch(`/api/journal?id=${encodeURIComponent(id)}&deviceId=${encodeURIComponent(deviceId)}`, { method: "DELETE" });
+        if (response.ok) setEntries((current) => current.filter((savedEntry) => savedEntry.id !== id));
     }
     return (<main className={`journal-desk ${handwriting.variable}`}>
       <header className="desk-header">
@@ -145,7 +143,7 @@ export default function JournalClient() {
         </div>
 
         <aside className="prompt-stack" aria-label="Journal prompts">
-           {entries.length > 0 && <><p className="side-label journal-history-label">Past pages</p>{entries.map((savedEntry) => <button className="prompt-card journal-history-card" type="button" key={savedEntry.id} onClick={() => openEntry(savedEntry)}><span>{savedEntry.created_at ? new Date(savedEntry.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : ""}</span><p className="journal-history-preview" title={savedEntry.entry || "Untitled page"}>{savedEntry.entry || "Untitled page"}</p></button>)}</>}
+           {entries.length > 0 && <><p className="side-label journal-history-label">Past pages</p>{entries.map((savedEntry) => <div className="prompt-card journal-history-card" key={savedEntry.id}><button className="journal-history-open" type="button" onClick={() => openEntry(savedEntry)}><span>{savedEntry.created_at ? new Date(savedEntry.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : ""}</span><p className="journal-history-preview" title={savedEntry.entry || "Untitled page"}>{savedEntry.entry || "Untitled page"}</p></button><button className="journal-history-delete" type="button" onClick={() => void deleteEntry(savedEntry.id!)} aria-label="Delete journal page">×</button></div>)}</>}
            <p className="side-label">Prompt cards</p>
            {prompts.map((promptText, index) => (<button className={`prompt-card ${prompt === promptText ? "active" : ""}`} type="button" key={promptText} onClick={() => { setPrompt(promptText); setStatus("idle"); }}><span>{String(index + 1).padStart(2, "0")}</span><p>{promptText}</p></button>))}
         </aside>
