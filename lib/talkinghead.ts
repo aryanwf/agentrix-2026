@@ -45,7 +45,11 @@ export async function loadTalkingHead(
   node: HTMLElement,
   { options, avatar, onProgress }: LoadOptions = {},
 ): Promise<TalkingHead> {
-  const { TalkingHead: TalkingHeadClass } = await import("@met4citizen/talkinghead");
+  const { TalkingHead: TalkingHeadClass } = (await import(
+    "../vendor/talkinghead/talkinghead.mjs"
+  )) as unknown as {
+    TalkingHead: new (node: HTMLElement, opt?: TalkingHeadOptions) => TalkingHead;
+  };
 
   const head = new TalkingHeadClass(node, { ...DEFAULT_OPTIONS, ...options });
 

@@ -1,3 +1,7 @@
+declare module "*/vendor/talkinghead/talkinghead.mjs" {
+  export * from "@met4citizen/talkinghead";
+}
+
 declare module "@met4citizen/talkinghead" {
   export type Mood = "neutral" | "happy" | "angry" | "sad" | "fear" | "disgust" | "love" | "sleep";
 
