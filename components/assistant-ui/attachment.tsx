@@ -43,7 +43,7 @@ import { TooltipIconButton } from "@/components/assistant-ui/tooltip-icon-button
 import { cn } from "@/lib/utils";
 
 const useFileSrc = (file: File | undefined) => {
-  // Manual fix for assistant-ui registry component (see CLEANUP.md 3.1):
+  // Manual fix for assistant-ui registry component:
   // upstream calls setSrc(...) synchronously inside a useEffect, which
   // react-hooks/set-state-in-effect flags as a possible cascading render.
   // URL.createObjectURL is synchronous, so the object URL can be derived

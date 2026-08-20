@@ -74,7 +74,7 @@ function ReasoningRoot({
   ...props
 }: ReasoningRootProps) {
   const collapsibleRef = useRef<HTMLDivElement>(null);
-  // Manual fix for assistant-ui registry component (see CLEANUP.md 3.4):
+  // Manual fix for assistant-ui registry component:
   // upstream captured the initial `defaultOpen` value in a ref
   // (`initialOpenRef`) and read `.current` during render, which
   // react-hooks/refs flags ("Cannot access refs during render"). A

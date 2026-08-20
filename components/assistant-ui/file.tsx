@@ -59,7 +59,7 @@ function getMimeTypeIcon(mimeType: string): FC<{ className?: string }> {
   return FileIcon;
 }
 
-// Manual fix for assistant-ui registry component (see CLEANUP.md 3.3):
+// Manual fix for assistant-ui registry component:
 // `getMimeTypeIcon` above picks a component *reference* at render time,
 // which react-hooks/static-components flags as "creating a component
 // during render" (it can't statically tell the returned reference is
