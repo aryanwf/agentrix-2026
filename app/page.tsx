@@ -54,7 +54,7 @@ export default function Home() {
     <main className="static-page">
       <header className="static-header">
         <a className="brand" href="#home" aria-label="Cura home"><Logo /><span>cura<span className="brand-dot">.</span></span></a>
-        <nav aria-label="Main navigation"><a href="#apps">Explore</a><a href="#about">About Cura</a><a className="header-button" href="#apps">Get started <span>↗</span></a></nav>
+        <nav aria-label="Main navigation"></nav>
       </header>
 
       <section className="static-hero" id="home">
@@ -78,7 +78,6 @@ export default function Home() {
       </section>
 
       <section className="app-picker" id="apps" aria-label="Choose a Cura application">
-        <div className="picker-heading"><span>Choose your way in</span><span>01 — 03</span></div>
         <div className="app-buttons">
           {(Object.keys(apps) as AppName[]).map((appName) => (
             <button className={`app-button ${activeApp === appName ? "selected" : ""}`} type="button" key={appName} onClick={() => selectApp(appName)} aria-pressed={activeApp === appName}>
