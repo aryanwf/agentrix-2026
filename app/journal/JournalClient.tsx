@@ -91,7 +91,11 @@ export default function JournalClient() {
         };
         if (result.entry)
             setEntries((current) => [result.entry!, ...current]);
-        setStatus("saved");
+        setMood("steady");
+        setMorningNote("I want to move through today with more patience than pressure.");
+        setPrompt(prompts[2]);
+        setEntry("Today I noticed...");
+        setStatus("idle");
     }
     function openEntry(savedEntry: SavedEntry) {
         setMood(savedEntry.mood || "steady");
