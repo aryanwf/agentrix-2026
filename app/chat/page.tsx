@@ -72,7 +72,7 @@ export default function ChatPage() {
 
         <div className="border-t border-border p-2">
           <div className="flex items-center gap-2 rounded-md bg-secondary px-2 py-1.5">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary border border-border text-primary-foreground">
               C
             </div>
             <div className="min-w-0">
@@ -88,7 +88,7 @@ export default function ChatPage() {
       <main className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-12 shrink-0 items-center justify-between border-b border-border px-4 md:px-6">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-xs font-bold text-primary-foreground">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary border border-border text-primary-foreground">
               C
             </div>
             <div>
@@ -113,7 +113,7 @@ export default function ChatPage() {
               <span
                 className={cn(
                   "h-1.5 w-1.5 rounded-full",
-                  isStreaming ? "bg-primary animate-pulse" : "bg-primary/40",
+                  isStreaming ? "bg-zinc-400 animate-pulse" : "bg-zinc-300",
                 )}
               />
               {isStreaming ? "Responding" : "Ready"}
@@ -125,7 +125,7 @@ export default function ChatPage() {
           <div className="mx-auto flex min-h-full w-full max-w-2xl flex-col px-4 py-6 md:px-6">
             {!hasMessages ? (
               <div className="flex flex-1 flex-col items-center justify-start gap-2 pt-8 text-center">
-                <div className="mb-1 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-lg font-bold text-primary-foreground">
+                <div className="mb-1 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary border border-border text-primary-foreground">
                   C
                 </div>
                 <h2 className="text-2xl font-semibold tracking-tight">
@@ -146,7 +146,7 @@ export default function ChatPage() {
                       key={message.id}
                     >
                       {!isUser ? (
-                        <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary text-[10px] font-semibold text-primary-foreground">
+                        <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary border border-border text-primary-foreground">
                           C
                         </div>
                       ) : null}
@@ -187,7 +187,7 @@ export default function ChatPage() {
               {isStreaming ? (
                 <Button
                   aria-label="Stop"
-                  className="h-12 w-12 shrink-0 rounded-full"
+                  className="h-12 w-12 shrink-0 rounded-full border border-input"
                   onClick={stop}
                   size="icon"
                   type="button"
@@ -199,7 +199,7 @@ export default function ChatPage() {
                 <Button
                   aria-label="Send"
                   className={cn(
-                    "h-12 w-12 shrink-0 rounded-full transition-opacity",
+                    "h-12 w-12 shrink-0 rounded-full border border-input transition-opacity",
                     !input.trim() && "pointer-events-none opacity-0",
                   )}
                   size="icon"
