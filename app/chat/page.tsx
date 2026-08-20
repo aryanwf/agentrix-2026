@@ -32,9 +32,6 @@ export default function ChatPage() {
           <span className="text-base font-bold leading-none tracking-[-0.07em]">
             cura<span className="brand-dot">.</span>
           </span>
-          <span className="ml-auto hidden items-center gap-1.5 text-[10px] font-semibold tracking-[0.16em] text-muted-foreground uppercase sm:flex">
-            <span className="private-pill"><i /> private space</span>
-          </span>
         </header>
 
         <main className="relative z-10 min-h-0 flex-1">
