@@ -9,7 +9,8 @@ create table if not exists public.conversations (
 
 alter table public.journal_entries add column if not exists user_id uuid references auth.users(id) on delete cascade;
 create index if not exists conversations_user_updated_idx on public.conversations (user_id, updated_at desc);
-create unique index if not exists conversations_user_single_idx on public.conversations (user_id);
+drop index if exists public.conversations_user_single_idx;
+create index if not exists conversations_user_idx on public.conversations (user_id, updated_at desc);
 create index if not exists journal_entries_user_created_idx on public.journal_entries (user_id, created_at desc);
 
 alter table public.conversations enable row level security;
