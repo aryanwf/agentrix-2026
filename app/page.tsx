@@ -35,7 +35,14 @@ function AppIcon({ type }: { type: AppName }) {
 
 export default function Home() {
   const [activeApp, setActiveApp] = useState<AppName>("chat");
+  const [journalEntry, setJournalEntry] = useState("");
+  const [entrySaved, setEntrySaved] = useState(false);
   const active = apps[activeApp];
+
+  function selectApp(appName: AppName) {
+    setActiveApp(appName);
+    setEntrySaved(false);
+  }
 
   return (
     <main className="static-page">
@@ -54,11 +61,23 @@ export default function Home() {
         <div className="companion-card" id="about">
           <div className="card-topline"><span><Logo /> Cura</span><span className="private-pill"><i /> private space</span></div>
           <div className="card-content" key={activeApp}>
-            <div className="card-kicker">{active.label} with Cura</div>
-            <h2>{active.title}</h2>
-            <p>{active.text}</p>
-            <div className="prompt-box"><span>{active.prompt}</span><b>↗</b></div>
-            <button className="begin-button" type="button">Begin with {active.label.toLowerCase()} <span>↗</span></button>
+            {activeApp === "journal" ? (
+              <div className="journal-workspace">
+                <div className="card-kicker">A page for today</div>
+                <h2>Write it<br /><em>down.</em></h2>
+                <p className="journal-prompt">{active.prompt}</p>
+                <textarea aria-label="Journal entry" value={journalEntry} onChange={(event) => { setJournalEntry(event.target.value); setEntrySaved(false); }} placeholder="Start wherever feels easy..." />
+                <button className="begin-button" type="button" onClick={() => setEntrySaved(true)}>{entrySaved ? "Entry saved" : "Save entry"} <span>{entrySaved ? "✓" : "↗"}</span></button>
+              </div>
+            ) : (
+              <>
+                <div className="card-kicker">{active.label} with Cura</div>
+                <h2>{active.title}</h2>
+                <p>{active.text}</p>
+                <div className="prompt-box"><span>{active.prompt}</span><b>↗</b></div>
+                <button className="begin-button" type="button">Begin with {active.label.toLowerCase()} <span>↗</span></button>
+              </>
+            )}
           </div>
           <div className="card-footer"><span>Small steps count.</span><span className="card-mark">✦</span></div>
         </div>
@@ -68,7 +87,7 @@ export default function Home() {
         <div className="picker-heading"><span>Choose your way in</span><span>01 — 03</span></div>
         <div className="app-buttons">
           {(Object.keys(apps) as AppName[]).map((appName) => (
-            <button className={`app-button ${activeApp === appName ? "selected" : ""}`} type="button" key={appName} onClick={() => setActiveApp(appName)} aria-pressed={activeApp === appName}>
+            <button className={`app-button ${activeApp === appName ? "selected" : ""}`} type="button" key={appName} onClick={() => selectApp(appName)} aria-pressed={activeApp === appName}>
               <AppIcon type={appName} /><span>{apps[appName].label}</span><b>↗</b>
             </button>
           ))}
