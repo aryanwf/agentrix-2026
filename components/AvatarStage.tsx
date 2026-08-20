@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useImperativeHandle, useRef, useState, type Ref } from "react";
-import { loadTalkingHead, type Mood, type TalkingHead } from "@/lib/talkinghead";
+import { loadTalkingHead, type LoadOptions, type Mood, type TalkingHead } from "@/lib/talkinghead";
 import { synthesize } from "@/lib/tts/client";
 
 export type SpeakResult =
@@ -49,9 +49,11 @@ type Props = {
   onReady?: () => void;
   onError?: (message: string) => void;
   className?: string;
+  /** Overrides merged into the default TalkingHead options (e.g. camera framing). */
+  options?: LoadOptions["options"];
 };
 
-export default function AvatarStage({ ref, onReady, onError, className }: Props) {
+export default function AvatarStage({ ref, onReady, onError, className, options }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const headRef = useRef<TalkingHead | null>(null);
   const [progress, setProgress] = useState(0);
@@ -73,7 +75,7 @@ export default function AvatarStage({ ref, onReady, onError, className }: Props)
     let cancelled = false;
     let head: TalkingHead | null = null;
 
-    loadTalkingHead(node, { onProgress: (f) => !cancelled && setProgress(f) })
+    loadTalkingHead(node, { options, onProgress: (f) => !cancelled && setProgress(f) })
       .then((instance) => {
         if (cancelled) {
           instance.dispose();

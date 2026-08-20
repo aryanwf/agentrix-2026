@@ -2,7 +2,8 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { MOODS, type Mood } from "@/lib/talkinghead";
+import { splitSentences } from "@/lib/sentences";
+import { GESTURES, MOODS, type Mood } from "@/lib/talkinghead";
 import { getTtsStatus, type TtsStatus } from "@/lib/tts/client";
 import type { AvatarHandle } from "./AvatarStage";
 
@@ -21,14 +22,6 @@ const AvatarStage = dynamic(() => import("./AvatarStage"), {
 
 const SAMPLE =
   "I'm really glad you came back today. Take your time — there's no rush at all. How has this week been feeling for you?";
-
-const GESTURES = ["handup", "ok", "thumbup", "index", "side", "shrug", "namaste"];
-
-function splitSentences(text: string): string[] {
-  return (text.match(/[^.!?…]+[.!?…]*/g) ?? [text])
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
 
 export default function Studio3D() {
   const avatar = useRef<AvatarHandle>(null);
@@ -167,6 +160,7 @@ export default function Studio3D() {
           onReady={handleReady}
           onError={handleError}
           className="h-full w-full"
+          options={{ cameraY: 0.35 }}
         />
 
         {subtitles && (
@@ -182,7 +176,11 @@ export default function Studio3D() {
         <header>
           <h1 className="text-sm font-semibold tracking-wide">Cura — avatar bench</h1>
           <p className="mt-1 text-xs leading-relaxed text-zinc-400">
-            Lip-sync harness for <code className="text-zinc-300">/3d</code>. ElevenLabs
+            Developer bench for the avatar. The product is{" "}
+            <a href="/session" className="text-emerald-400 underline underline-offset-2">
+              /session
+            </a>
+            ; both drive the same <code className="text-zinc-300">AvatarStage</code>. ElevenLabs
             character timings via <code className="text-zinc-300">/api/tts</code> are folded
             into word timings that drive the visemes.
           </p>
@@ -191,8 +189,8 @@ export default function Studio3D() {
         {status?.configured === false && (
           <p className="rounded-md border border-amber-900/60 bg-amber-950/40 p-2 text-xs leading-relaxed text-amber-200">
             <code>ELEVENLABS_API_KEY</code> is not set, so speech is muted — visemes and
-            subtitles still play with estimated timings. Add the key to{" "}
-            <code>.env.local</code> for real audio.
+            subtitles still play with estimated timings. Add the key to <code>.env</code> for
+            real audio.
           </p>
         )}
 
