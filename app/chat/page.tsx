@@ -40,7 +40,7 @@ export default function ChatPage() {
 
   return (
     <div className="flex h-dvh bg-background text-foreground">
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-muted/40 md:flex">
+      <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-white md:flex">
         <div className="p-3">
           <Button
             className="h-10 w-full justify-start gap-2 rounded-lg text-sm"
