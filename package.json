@@ -40,8 +40,5 @@
   "trustedDependencies": [
     "sharp",
     "unrs-resolver"
-  ],
-  "patchedDependencies": {
-    "@met4citizen/talkinghead@1.7.0": "patches/@met4citizen%2Ftalkinghead@1.7.0.patch"
-  }
+  ]
 }
