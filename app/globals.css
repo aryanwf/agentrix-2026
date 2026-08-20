@@ -205,13 +205,23 @@ a { color: inherit; } button { cursor: pointer; font: inherit; }
   max-width: 340px;
 }
 
-/* Typing / thinking indicator for the chat workspace. */
+/* Buffering / typing indicator for the chat workspace. */
+.typing-bubble {
+  align-items: center;
+  background: var(--olive-soft);
+  border: 1px solid #d8d1e2;
+  border-radius: 18px;
+  border-bottom-left-radius: 6px;
+  display: inline-flex;
+  gap: 5px;
+  padding: 11px 14px;
+}
+
 .typing-dot {
   animation: typing-bounce 1.2s ease-in-out infinite;
-  background: var(--muted);
+  background: var(--olive);
   border-radius: 50%;
   height: 7px;
-  opacity: 0.5;
   width: 7px;
 }
 

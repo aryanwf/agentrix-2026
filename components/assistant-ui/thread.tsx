@@ -177,6 +177,11 @@ const ThreadRoot: FC<{ isEmpty: boolean }> = ({ isEmpty }) => {
             <ThreadPrimitive.Messages>
               {() => <ThreadMessage />}
             </ThreadPrimitive.Messages>
+            <AuiIf
+              condition={(s) => s.thread.isRunning && s.thread.messages.length > 0}
+            >
+              <ThreadTypingIndicator />
+            </AuiIf>
           </div>
 
           <ThreadPrimitive.ViewportFooter
@@ -259,6 +264,24 @@ const ThreadSuggestionItem: FC = () => {
           <SuggestionPrimitive.Description className="aui-thread-welcome-suggestion-text-2 empty:hidden" />
         </Button>
       </SuggestionPrimitive.Trigger>
+    </div>
+  );
+};
+
+const ThreadTypingIndicator: FC = () => {
+  return (
+    <div
+      data-slot="aui_thread-typing-indicator"
+      role="status"
+      aria-label="Cura is thinking"
+      className="fade-in slide-in-from-bottom-1 animate-in flex items-center px-2 duration-150"
+    >
+      <span className="typing-bubble" aria-hidden="true">
+        <span className="typing-dot" />
+        <span className="typing-dot" />
+        <span className="typing-dot" />
+      </span>
+      <span className="sr-only">Cura is thinking</span>
     </div>
   );
 };
@@ -449,15 +472,7 @@ const AssistantMessage: FC = () => {
                   </div>
                 );
               case "indicator":
-                return (
-                  <span
-                    data-slot="aui_assistant-message-indicator"
-                    className="animate-pulse font-sans"
-                    aria-label="Assistant is working"
-                  >
-                    {"●"}
-                  </span>
-                );
+                return null;
               default:
                 return null;
             }
