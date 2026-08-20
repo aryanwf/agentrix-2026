@@ -10,6 +10,14 @@
 .journal-history-open { background: transparent; border: 0; color: inherit; display: block; padding: 0 24px 0 0; text-align: left; width: 100%; }
 .journal-history-delete { background: transparent; border: 0; color: var(--muted); font-size: 21px; line-height: 1; padding: 4px; position: absolute; right: 10px; top: 10px; }
 .journal-history-delete:hover { color: var(--coral); }
+.journal-dialog-backdrop { align-items: center; background: rgba(45,38,31,.38); display: flex; inset: 0; justify-content: center; padding: 20px; position: fixed; z-index: 20; }
+.journal-dialog { background: var(--paper); box-shadow: 0 24px 70px rgba(45,38,31,.3); max-width: 390px; padding: 30px; width: 100%; }
+.journal-dialog h2 { font-family: Georgia, serif; font-size: 34px; font-weight: 400; letter-spacing: -.05em; margin: 8px 0 10px; }
+.journal-dialog p { color: var(--muted); font-size: 14px; line-height: 1.55; margin-bottom: 25px; }
+.journal-dialog-actions { display: flex; gap: 10px; justify-content: flex-end; }
+.journal-dialog-actions button { background: transparent; border: 1px solid var(--line); color: var(--ink); font-size: 12px; padding: 11px 14px; }
+.journal-dialog-actions .journal-dialog-confirm { background: var(--coral); border-color: var(--coral); color: white; }
+.journal-dialog-actions button:disabled { cursor: wait; opacity: .6; }
 .journal-history-preview { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; text-overflow: ellipsis; word-break: break-word; }
 @media (max-width: 1050px) { .journal-desk { overflow: auto; }.journal-board { display: block; height: auto; padding: 20px; }.left-notes { max-width: none; transform: rotate(0); }.open-journal { margin: 65px auto 40px; max-width: 820px; min-height: 540px; }.journal-page-sheet { min-height: 540px; }.prompt-stack { grid-template-columns: repeat(3, 1fr); max-height: none; overflow: visible; padding: 0 7px 24px; }.prompt-stack .side-label { grid-column: 1 / -1; } }
 @media (max-width: 720px) { .desk-header { padding: 20px; }.desk-date { display: none; }.open-journal { display: block; transform: rotate(0); }.journal-spine { display: none; }.journal-page-sheet { border-radius: 18px; min-height: auto; padding: 32px 28px 90px; }.page-left { margin-bottom: 22px; padding-right: 28px; }.page-right { padding-left: 28px; }.prompt-stack { grid-template-columns: 1fr; }.save-entry { right: 28px; }.left-notes h1 { font-size: 39px; } }

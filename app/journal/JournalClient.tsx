@@ -42,6 +42,8 @@ export default function JournalClient() {
     const [error, setError] = useState("");
     const [entries, setEntries] = useState<SavedEntry[]>([]);
     const [ready, setReady] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState<SavedEntry | null>(null);
+    const [deletingId, setDeletingId] = useState("");
     useEffect(() => {
         async function loadEntry() {
             const id = getDeviceId();
@@ -97,10 +99,16 @@ export default function JournalClient() {
         setEntry(savedEntry.entry || "");
         setStatus("idle");
     }
-    async function deleteEntry(id: string) {
-        if (!window.confirm("Delete this journal page?")) return;
-        const response = await fetch(`/api/journal?id=${encodeURIComponent(id)}&deviceId=${encodeURIComponent(deviceId)}`, { method: "DELETE" });
-        if (response.ok) setEntries((current) => current.filter((savedEntry) => savedEntry.id !== id));
+    async function deleteEntry() {
+        if (!deleteTarget?.id) return;
+        setDeletingId(deleteTarget.id);
+        const response = await fetch(`/api/journal?id=${encodeURIComponent(deleteTarget.id)}&deviceId=${encodeURIComponent(deviceId)}`, { method: "DELETE" });
+        if (response.ok) {
+            setEntries((current) => current.filter((savedEntry) => savedEntry.id !== deleteTarget.id));
+            setDeleteTarget(null);
+        }
+        else setError("Could not delete this page. Please try again.");
+        setDeletingId("");
     }
     return (<main className={`journal-desk ${handwriting.variable}`}>
       <header className="desk-header">
@@ -143,10 +151,11 @@ export default function JournalClient() {
         </div>
 
         <aside className="prompt-stack" aria-label="Journal prompts">
-           {entries.length > 0 && <><p className="side-label journal-history-label">Past pages</p>{entries.map((savedEntry) => <div className="prompt-card journal-history-card" key={savedEntry.id}><button className="journal-history-open" type="button" onClick={() => openEntry(savedEntry)}><span>{savedEntry.created_at ? new Date(savedEntry.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : ""}</span><p className="journal-history-preview" title={savedEntry.entry || "Untitled page"}>{savedEntry.entry || "Untitled page"}</p></button><button className="journal-history-delete" type="button" onClick={() => void deleteEntry(savedEntry.id!)} aria-label="Delete journal page">×</button></div>)}</>}
+           {entries.length > 0 && <><p className="side-label journal-history-label">Past pages</p>{entries.map((savedEntry) => <div className="prompt-card journal-history-card" key={savedEntry.id}><button className="journal-history-open" type="button" onClick={() => openEntry(savedEntry)}><span>{savedEntry.created_at ? new Date(savedEntry.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : ""}</span><p className="journal-history-preview" title={savedEntry.entry || "Untitled page"}>{savedEntry.entry || "Untitled page"}</p></button><button className="journal-history-delete" type="button" onClick={() => setDeleteTarget(savedEntry)} aria-label="Delete journal page">×</button></div>)}</>}
            <p className="side-label">Prompt cards</p>
            {prompts.map((promptText, index) => (<button className={`prompt-card ${prompt === promptText ? "active" : ""}`} type="button" key={promptText} onClick={() => { setPrompt(promptText); setStatus("idle"); }}><span>{String(index + 1).padStart(2, "0")}</span><p>{promptText}</p></button>))}
         </aside>
       </section>
-    </main>);
+       {deleteTarget && <div className="journal-dialog-backdrop" role="presentation" onClick={() => setDeleteTarget(null)}><div className="journal-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-journal-title" onClick={(event) => event.stopPropagation()}><span className="side-label">Past page</span><h2 id="delete-journal-title">Delete this page?</h2><p>This reflection will be removed from your journal history.</p><div className="journal-dialog-actions"><button type="button" onClick={() => setDeleteTarget(null)} disabled={!!deletingId}>Keep page</button><button className="journal-dialog-confirm" type="button" onClick={() => void deleteEntry()} disabled={!!deletingId}>{deletingId ? "Deleting..." : "Delete page"}</button></div></div></div>}
+     </main>);
 }
