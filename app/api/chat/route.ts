@@ -13,7 +13,7 @@ import {
   sanitizeForSpeech,
 } from "@/lib/prompts";
 import { CRISIS_SCRIPT, FALLBACK_REPLY } from "@/lib/resources";
-import { LEXICON_IMPLEMENTED, classifyLexicon } from "@/lib/safety/lexicon";
+import { classifyLexicon } from "@/lib/safety/lexicon";
 import { isCrisis, type RiskTier } from "@/lib/safety/types";
 import { SentenceSplitter } from "@/lib/sentences";
 
@@ -91,12 +91,6 @@ async function run({ messages, userText, signal, send }: RunContext): Promise<vo
   // 1. Safety first, and never on the client's word — `clientRisk` from the request is ignored.
   const tier: RiskTier = classifyLexicon(userText);
   send({ type: "risk", tier, source: "lexicon" });
-
-  if (process.env.NODE_ENV !== "production" && !LEXICON_IMPLEMENTED) {
-    console.warn(
-      "[cura] safety lexicon is still the step-2 stub: every turn classifies as `none`.",
-    );
-  }
 
   // 2. Crisis bypasses the model entirely. A fixed script is the whole point — a generated one
   //    could be talked out of itself, and this is the one moment that must not vary.

@@ -1,29 +1,22 @@
 import type { RiskTier } from "./types";
 
 /**
- * ============================================================================
- * STUB — NOT YET IMPLEMENTED. Build step 4 replaces this file wholesale.
- * ============================================================================
+ * Fast, deterministic first-pass risk classifier over the user's latest turn.
  *
- * This deliberately returns "none" for every input so that step 2's streaming path can be built
- * and measured. /api/chat already calls it, already emits the `risk` event, and already has the
- * crisis-bypass branch wired, so step 4 is a change to this file and `classify.ts` only — the
- * route handler does not need to be touched.
+ * Runs before any model call so that `/api/chat` can bypass the LLM entirely on a crisis.
+ * Pattern-based, so it is cheap and never fails open on a network error; it is a floor, not a
+ * ceiling — a guard model may escalate further, but never de-escalate what this returns.
  *
- * Until step 4 lands, THE APP HAS NO SAFETY NET. Do not demo it to anyone as a mental-health
- * tool in this state.
- *
- * Target behaviour (PLAN §6.2):
- *   imminent  means + plan + timeframe ("tonight", "I have the pills")
- *   high      suicidal ideation, self-harm intent, "want to die", harm to others
- *   distress  hopelessness, "can't go on", panic, abuse disclosure
+ * Tiers:
+ *   imminent  self-harm means paired with a timeframe ("kill myself tonight")
+ *   high      suicidal ideation or self-harm/other-harm intent ("want to die", "hurt myself")
+ *   distress  hopelessness, panic, abuse disclosure ("can't go on", "unsafe at home")
  *   none      everything else
  *
- * With negation/quotation guards ("my friend said…", "I used to feel…") to cut false positives,
- * and the standing rule: when ambiguous, escalate.
+ * Guards: third-party reports ("my friend wants to die") are stripped before matching, and
+ * explicit negation ("I don't want to die") suppresses the `high` tier. The guards are
+ * deliberately narrow — when a phrase is ambiguous, it escalates.
  */
-
-export const LEXICON_IMPLEMENTED = true;
 
 const imminentPattern =
   /\b(?:tonight|today|right now|this (?:morning|evening|week)|tomorrow|in \d+ (?:hours?|days?))\b.*\b(?:kill myself|end my life|suicide|overdose|shoot myself|hang myself|jump)\b|\b(?:kill myself|end my life|suicide|overdose|shoot myself|hang myself|jump)\b.*\b(?:tonight|today|right now|this (?:morning|evening|week)|tomorrow|in \d+ (?:hours?|days?))\b/i;
