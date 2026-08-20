@@ -124,7 +124,7 @@ export default function ChatPage() {
         <ScrollArea className="min-h-0 flex-1">
           <div className="mx-auto flex min-h-full w-full max-w-2xl flex-col px-4 py-6 md:px-6">
             {!hasMessages ? (
-              <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
+              <div className="flex flex-1 flex-col items-center justify-start gap-2 pt-8 text-center">
                 <div className="mb-1 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-lg font-bold text-primary-foreground">
                   C
                 </div>
