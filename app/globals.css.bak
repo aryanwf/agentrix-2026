@@ -77,17 +77,17 @@ h1 { font-size: clamp(82px, 10vw, 145px); }
 :root {
   --card: var(--white);
   --card-foreground: var(--ink);
-  --primary: var(--olive-deep);
-  --primary-foreground: var(--white);
+  --primary: var(--white);
+  --primary-foreground: var(--ink);
   --secondary: var(--white);
   --secondary-foreground: var(--ink);
   --muted-foreground: var(--muted);
-  --accent: var(--olive-soft);
+  --accent: #f2eff6;
   --accent-foreground: var(--ink);
   --destructive: #e11d48;
   --border: var(--line);
   --input: var(--line);
-  --ring: var(--olive);
+  --ring: #d4d4d8;
 }
 
 @theme inline {
@@ -113,40 +113,4 @@ h1 { font-size: clamp(82px, 10vw, 145px); }
 
 .no-scrollbar::-webkit-scrollbar {
   display: none;
-}
-
-/* Landing-style graphics behind the /chat workspace. */
-.chat-backdrop {
-  background: linear-gradient(
-    115deg,
-    rgba(232, 228, 240, 0.4) 0%,
-    rgba(232, 228, 240, 0.75) 100%
-  );
-}
-
-.chat-backdrop:before,
-.chat-backdrop:after {
-  border-radius: 50%;
-  content: "";
-  position: absolute;
-}
-
-.chat-backdrop:before {
-  background: #f5c8bb;
-  filter: blur(70px);
-  height: 280px;
-  opacity: 0.4;
-  right: 4%;
-  top: 4%;
-  width: 280px;
-}
-
-.chat-backdrop:after {
-  background: #c9c2dd;
-  bottom: 6%;
-  filter: blur(80px);
-  height: 220px;
-  left: 6%;
-  opacity: 0.3;
-  width: 220px;
 }
