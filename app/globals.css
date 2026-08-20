@@ -787,7 +787,7 @@ h1, h2, p { margin-top: 0; }
 .chat-sidebar-heading { align-items: center; color: var(--muted); display: flex; font-size: 13px; font-weight: 700; justify-content: space-between; letter-spacing: .14em; padding: 0 10px 16px; text-transform: uppercase; }
 .chat-sidebar-heading button { align-items: center; background: var(--ink); border: 0; border-radius: 50%; color: var(--white); display: inline-flex; height: 26px; justify-content: center; width: 26px; }
 .chat-history-list { display: grid; gap: 4px; }
-.chat-history-item { align-items: center; background: transparent; border: 0; border-radius: 8px; color: var(--muted); display: flex; font-size: 15px; gap: 11px; min-width: 0; padding: 14px 11px; text-align: left; }
+.chat-history-item { align-items: center; background: transparent; border: 0; border-radius: 8px; color: var(--muted); display: flex; font-size: 15px; font-weight: 600; gap: 11px; min-width: 0; padding: 14px 11px; text-align: left; }
 .chat-history-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chat-history-item:hover, .chat-history-item.active { background: var(--olive-soft); color: var(--ink); }
 .chat-history-empty { color: var(--muted); font-size: 14px; line-height: 1.5; padding: 10px; }
