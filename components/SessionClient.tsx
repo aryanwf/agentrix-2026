@@ -1,6 +1,7 @@
 "use client";
 
-import { Mic, MicOff } from "lucide-react";
+import { ArrowLeft, Mic, MicOff } from "lucide-react";
+import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { streamChat } from "@/lib/chat/client";
@@ -424,6 +425,14 @@ export default function SessionClient() {
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col bg-[#f3e6c9] text-zinc-100 lg:flex-row">
       <section className="relative min-h-[45vh] flex-1">
+        <Link
+          href="/"
+          className="absolute left-4 top-4 z-10 flex items-center gap-1.5 rounded-full bg-black/50 px-3 py-1.5 text-sm text-zinc-200 backdrop-blur transition-colors hover:bg-black/70 hover:text-white"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to dashboard
+        </Link>
+
         <AvatarStage
           ref={avatar}
           onReady={() => setAvatarReady(true)}

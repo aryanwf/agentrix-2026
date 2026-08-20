@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { MessageCircle, AudioLines, NotebookPen } from "lucide-react";
 
 type AppName = "chat" | "talk" | "journal";
 
@@ -29,8 +30,19 @@ function Logo() {
   return <span className="logo-mark" aria-hidden="true"><i /><i /><i /></span>;
 }
 
+const appIcons: Record<AppName, typeof MessageCircle> = {
+  chat: MessageCircle,
+  talk: AudioLines,
+  journal: NotebookPen,
+};
+
 function AppIcon({ type }: { type: AppName }) {
-  return <span className={`app-icon ${type}-icon`} aria-hidden="true" />;
+  const Icon = appIcons[type];
+  return (
+    <span className={`app-icon ${type}-icon`} aria-hidden="true">
+      <Icon size={18} strokeWidth={1.75} />
+    </span>
+  );
 }
 
 export default function Home() {
@@ -61,7 +73,6 @@ export default function Home() {
         <div className="hero-message">
           <h1>Feel more like <em>yourself.</em></h1>
           <p className="hero-copy">Cura is a calm companion for everyday wellbeing. Choose a way in, take your time, and begin wherever you are.</p>
-          <a className="hero-link" href="#apps">Explore the ways in <span>↓</span></a>
         </div>
 
         <div className="companion-card" id="about">
