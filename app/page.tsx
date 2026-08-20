@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 type AppName = "chat" | "talk" | "journal";
@@ -34,12 +35,17 @@ function AppIcon({ type }: { type: AppName }) {
 }
 
 export default function Home() {
+  const router = useRouter();
   const [activeApp, setActiveApp] = useState<AppName>("chat");
   const [journalEntry, setJournalEntry] = useState("");
   const [entrySaved, setEntrySaved] = useState(false);
   const active = apps[activeApp];
 
   function selectApp(appName: AppName) {
+    if (appName === "journal") {
+      router.push("/journal");
+      return;
+    }
     setActiveApp(appName);
     setEntrySaved(false);
   }
