@@ -422,7 +422,7 @@ export default function SessionClient() {
   const statusLabel = listening ? "listening" : state;
 
   return (
-    <div className="flex h-full min-h-0 flex-1 flex-col bg-[#12161c] text-zinc-100 lg:flex-row">
+    <div className="flex h-full min-h-0 flex-1 flex-col bg-[#f3e6c9] text-zinc-100 lg:flex-row">
       <section className="relative min-h-[45vh] flex-1">
         <AvatarStage
           ref={avatar}
@@ -614,10 +614,6 @@ export default function SessionClient() {
           )}
         </form>
 
-        <p className="text-[11px] leading-relaxed text-zinc-500">
-          Cura is an AI companion, not a therapist or emergency service. Nothing
-          you type is stored on our servers.
-        </p>
       </aside>
     </div>
   );
