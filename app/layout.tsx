@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Cura | A quiet place to begin",
-  description: "A private, supportive space to talk things through.",
+  title: "Cura | Make space for what matters",
+  description: "A thoughtful companion for everyday wellbeing.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
