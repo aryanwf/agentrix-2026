@@ -54,9 +54,8 @@ a { color: inherit; } button { cursor: pointer; font: inherit; }
 .card-mark { color: var(--olive); }
 .app-picker { padding-bottom: 20px; padding-top: 14px; }
 .app-button { border-color: #ddd0b4; color: var(--ink); }
-.app-button:hover, .app-button.selected { background: var(--ink); border-color: var(--ink); }
+.app-button:hover, .app-button.selected { background: var(--ink); border-color: var(--ink); color: white; }
 .app-button.selected .app-icon { color: var(--olive); }
-.app-icon { color: var(--ink); }
 .journal-workspace h2 { margin-bottom: 12px; }
 .journal-prompt { color: #6d7180; font-family: Georgia, serif; font-size: 16px; margin-bottom: 13px; }
 .journal-workspace textarea { background: rgba(252,250,246,.78); border: 1px solid #d4cfdd; color: var(--ink); display: block; font: 14px/1.5 Arial, Helvetica, sans-serif; height: 76px; outline: 0; padding: 13px 15px; resize: none; width: 100%; }
