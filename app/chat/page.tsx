@@ -26,14 +26,15 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const { messages, sendMessage, status, stop, error } = useChat({ transport });
   const isStreaming = status === "submitted" || status === "streaming";
+  const isBusy = isStreaming;
   const hasMessages = messages.length > 0;
 
   function submit(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault();
     const text = input.trim();
-    if (!text || isStreaming) return;
-    sendMessage({ text });
+    if (!text || isBusy) return;
     setInput("");
+    sendMessage({ text });
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
@@ -116,10 +117,10 @@ export default function ChatPage() {
               <span
                 className={cn(
                   "h-1.5 w-1.5 rounded-full",
-                  isStreaming ? "bg-zinc-400 animate-pulse" : "bg-zinc-300",
+                  isBusy ? "bg-zinc-400 animate-pulse" : "bg-zinc-300",
                 )}
               />
-              {isStreaming ? "Responding" : "Ready"}
+              {isBusy ? "Responding" : "Ready"}
             </span>
           </div>
         </header>
@@ -170,6 +171,21 @@ export default function ChatPage() {
                     </article>
                   );
                 })}
+                {isBusy ? (
+                  <article className="flex justify-start gap-3">
+                    <span className="logo-mark sm mt-1" aria-hidden="true">
+                      <i /><i /><i />
+                    </span>
+                    <div
+                      aria-label="CURA is thinking"
+                      className="flex items-center gap-1.5 px-1 py-2.5"
+                    >
+                      <span className="typing-dot" />
+                      <span className="typing-dot" />
+                      <span className="typing-dot" />
+                    </div>
+                  </article>
+                ) : null}
               </div>
             )}
 
@@ -193,7 +209,7 @@ export default function ChatPage() {
                 rows={1}
                 value={input}
               />
-              {isStreaming ? (
+              {isBusy ? (
                 <Button
                   aria-label="Stop"
                   className="h-10 w-10 shrink-0 rounded-full border border-input"

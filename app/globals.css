@@ -150,3 +150,34 @@ a { color: inherit; } button { cursor: pointer; font: inherit; }
   opacity: 0.3;
   width: 220px;
 }
+
+/* Typing / thinking indicator for the chat workspace. */
+.typing-dot {
+  animation: typing-bounce 1.2s ease-in-out infinite;
+  background: var(--muted);
+  border-radius: 50%;
+  height: 7px;
+  opacity: 0.5;
+  width: 7px;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes typing-bounce {
+  0%,
+  60%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-4px);
+  }
+}
