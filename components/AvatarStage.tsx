@@ -19,8 +19,19 @@ export type AvatarHandle = {
       voiceId?: string;
       onWord?: (word: string) => void;
       signal?: AbortSignal;
+      /**
+       * Fires when *this* utterance has finished playing, via a marker riding directly behind it in
+       * TalkingHead's queue. Lets the caller tell "handed over" from "actually heard", which is what
+       * makes a barge-in resumable: whatever hasn't fired yet still needs to be spoken.
+       */
+      onPlayed?: () => void;
     },
   ) => Promise<SpeakResult | null>;
+  /**
+   * Clears TalkingHead's internal speech queue and kills audio immediately. Used for barge-in too:
+   * undelivered sentences are held as *text* in our own `SpeechQueue`, so this discards the
+   * avatar's buffer without losing the response.
+   */
   stop: () => void;
   /**
    * Fires once every utterance queued before it has finished *playing*. `speak` resolves at
@@ -116,6 +127,7 @@ export default function AvatarStage({ ref, onReady, onError, className }: Props)
         
         if (opts?.mute) {
           head.speakText(trimmed, { avatarMute: true }, opts?.onWord);
+          if (opts?.onPlayed) head.speakMarker(opts.onPlayed);
           return { mode: "muted", chars: trimmed.length };
         }
 
@@ -134,6 +146,7 @@ export default function AvatarStage({ ref, onReady, onError, className }: Props)
           {},
           opts?.onWord,
         );
+        if (opts?.onPlayed) head.speakMarker(opts.onPlayed);
 
         return {
           mode: "audio",
