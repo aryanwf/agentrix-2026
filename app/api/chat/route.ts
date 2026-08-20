@@ -142,7 +142,7 @@ async function run({ messages, userText, signal, send }: RunContext): Promise<vo
             emitSentences(FALLBACK_REPLY);
     }
     send({ type: "done", usage: sink.usage, model: sink.model });
-    log("chat", "done", `${index} sentences`, sink.model, sink.usage ? `${sink.usage.total_tokens} tok` : null, since(started));
+    log("chat", "done", `${index} sentences`, sink.model, sink.usage ? `${sink.usage.prompt}+${sink.usage.completion} tok` : null, since(started));
 }
 function normalizeMessages(input: ChatRequest["messages"]): ChatMessage[] {
     if (!Array.isArray(input))

@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { alignmentToWords, type Alignment, type WordTimings } from "@/lib/tts/alignment";
 import { allow } from "@/lib/rate-limit";
+import { log, since } from "@/lib/log";
 const API_BASE = "https://api.elevenlabs.io/v1";
 const DEFAULT_MODEL = "eleven_flash_v2_5";
 const DEFAULT_VOICE = "EXAVITQu4vr4xnSDxMaL";
@@ -105,9 +106,11 @@ export async function POST(req: Request) {
     const voiceId = body.voiceId || process.env.ELEVENLABS_VOICE_ID || DEFAULT_VOICE;
     const modelId = body.modelId || process.env.ELEVENLABS_MODEL_ID || DEFAULT_MODEL;
     const format = process.env.ELEVENLABS_OUTPUT_FORMAT || DEFAULT_FORMAT;
+    const started = performance.now();
     const key = cacheKey(text, voiceId, modelId);
     const hit = await readCache(key);
     if (hit) {
+        log("tts", "cache hit", `${text.length} chars`, since(started));
         return json({ ...hit, cached: true } satisfies SpeechPayload, 200);
     }
     let upstream: Response;
@@ -120,10 +123,12 @@ export async function POST(req: Request) {
         });
     }
     catch (err) {
+        log("warn", `tts upstream unreachable: ${(err as Error).message}`);
         return json({ error: `TTS upstream unreachable: ${(err as Error).message}` }, 502);
     }
     if (!upstream.ok) {
         const detail = await upstream.text().catch(() => "");
+        log("warn", `tts returned ${upstream.status}`, since(started));
         if (upstream.status === 402 && detail.includes("paid_plan_required")) {
             return json({
                 error: `Voice ${voiceId} is a library voice, which the free tier cannot use via the API. Pick one from GET /api/tts/voices.`,
@@ -145,6 +150,7 @@ export async function POST(req: Request) {
         ? alignmentToWords(alignment)
         : { words: [], wtimes: [], wdurations: [] };
     const payload = { audio: data.audio_base64, ...timings };
+    log("tts", "synthesised", `${text.length} chars`, `${timings.words.length} word timings`, modelId, since(started));
     await writeCache(key, payload);
     return json({ ...payload, cached: false } satisfies SpeechPayload, 200);
 }

@@ -1,5 +1,6 @@
 import { complete, guardModel, OpenRouterError } from "@/lib/openrouter";
 import { allow } from "@/lib/rate-limit";
+import { log, quote, since } from "@/lib/log";
 export const maxDuration = 15;
 const RATE_LIMIT = 60;
 const MAX_CHARS = 600;
@@ -42,6 +43,8 @@ export async function POST(req: Request) {
         return json({ decision: "continue" }, 200);
     const interrupted = (body.interrupted ?? "").trim().slice(0, MAX_CHARS);
     const remaining = (body.remaining ?? "").trim().slice(0, MAX_CHARS);
+    const started = performance.now();
+    log("barge", "adjudicating", quote(utterance), `over ${quote(interrupted, 40)}`);
     try {
         const raw = await complete({
             model: guardModel(),
@@ -63,10 +66,12 @@ export async function POST(req: Request) {
             ],
         });
         const decision: BargeDecision = /continue/i.test(raw) ? "continue" : "respond";
+        log("barge", decision === "continue" ? "backchannel — resuming answer" : "user took the floor", since(started));
         return json({ decision }, 200);
     }
     catch (err) {
         const status = err instanceof OpenRouterError && err.status === 501 ? 501 : 200;
+        log("warn", "barge adjudicator unavailable — defaulting to respond", since(started));
         return json({ decision: "respond", reason: "unavailable" }, status);
     }
 }

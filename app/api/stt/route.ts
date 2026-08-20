@@ -1,4 +1,5 @@
 import { allow } from "@/lib/rate-limit";
+import { log, quote, since } from "@/lib/log";
 const API_URL = "https://api.groq.com/openai/v1/audio/transcriptions";
 const DEFAULT_MODEL = "whisper-large-v3-turbo";
 const MAX_BYTES = 8 * 1024 * 1024;
@@ -37,8 +38,11 @@ export async function POST(req: Request) {
     if (audio.size > MAX_BYTES) {
         return json({ error: `Audio too large (${audio.size} > ${MAX_BYTES} bytes).` }, 413);
     }
-    if (audio.size < 4000)
+    if (audio.size < 4000) {
+        log("stt", "segment too short to transcribe", `${audio.size} B`);
         return json({ text: "" } satisfies SttPayload, 200);
+    }
+    const started = performance.now();
     const upstreamForm = new FormData();
     upstreamForm.append("file", audio, "turn.wav");
     upstreamForm.append("model", process.env.GROQ_STT_MODEL || DEFAULT_MODEL);
@@ -58,10 +62,12 @@ export async function POST(req: Request) {
         });
     }
     catch (err) {
+        log("warn", `stt upstream unreachable: ${(err as Error).message}`);
         return json({ error: `STT upstream unreachable: ${(err as Error).message}` }, 502);
     }
     if (!upstream.ok) {
         const detail = await upstream.text().catch(() => "");
+        log("warn", `stt returned ${upstream.status}`, since(started));
         return json({
             error: `Groq returned ${upstream.status}`,
             detail: detail.slice(0, 500),
@@ -74,5 +80,7 @@ export async function POST(req: Request) {
     };
     const text = (data.text ?? "").trim();
     const noise = /^(\[.*\]|\(.*\)|thanks? (you|for watching).*|you|bye|\.|,)$/i;
-    return json({ text: noise.test(text) ? "" : text } satisfies SttPayload, 200);
+    const heard = noise.test(text) ? "" : text;
+    log("stt", heard ? quote(heard) : "discarded as noise", `${Math.round(audio.size / 1024)} KB`, since(started));
+    return json({ text: heard } satisfies SttPayload, 200);
 }
