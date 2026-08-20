@@ -1,7 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { Caveat } from "next/font/google";
 import { useEffect, useState } from "react";
+
+const handwriting = Caveat({
+  subsets: ["latin"],
+  variable: "--font-handwriting",
+});
 
 const prompts = [
   "What did today ask of me?",
@@ -87,7 +93,7 @@ export default function JournalClient() {
   }
 
   return (
-    <main className="journal-desk">
+    <main className={`journal-desk ${handwriting.variable}`}>
       <header className="desk-header">
         <Link className="desk-brand" href="/" aria-label="Back to Cura home"><Logo /><span>Cura Journal</span></Link>
         <div className="desk-date"><span>{status === "loading" ? "Loading notebook" : "Private notebook"}</span><strong>Aug 20</strong></div>
